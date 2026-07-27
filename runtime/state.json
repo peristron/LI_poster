@@ -1,6 +1,6 @@
 {
   "schema_version": 4,
-  "revision": 31,
+  "revision": 32,
   "settings": {
     "automation_enabled": true,
     "dry_run": false,
@@ -1419,10 +1419,12 @@
       },
       "post_text": "Dimidium facti, qui coepit, habet.\n\nOne who has begun has half the deed done.\n\n— Horace, Epistles 1.2.40",
       "scheduled_for": "2026-07-27T21:20:00+00:00",
-      "status": "publishing",
+      "status": "posted",
       "created_at": "2026-07-27T21:02:41.015741+00:00",
       "attempts": 1,
-      "claimed_at": "2026-07-27T22:18:18.096748+00:00"
+      "claimed_at": "2026-07-27T22:18:18.096748+00:00",
+      "posted_at": "2026-07-27T22:18:20.211028+00:00",
+      "linkedin_post_id": "urn:li:share:7487632491852496896"
     },
     {
       "id": "a1716d33-dc06-4cf7-9d95-0c5f237dc0d7",
@@ -1453,9 +1455,73 @@
       "status": "cancelled",
       "created_at": "2026-07-27T20:58:32.736340+00:00",
       "attempts": 0
+    },
+    {
+      "id": "e852c5c4-10b4-4b51-979f-dafefbf4f565",
+      "saying_id": "horace-ep-1-2-40a",
+      "saying_snapshot": {
+        "id": "horace-ep-1-2-40a",
+        "approved": true,
+        "latin": "Dimidium facti, qui coepit, habet.",
+        "translation": "One who has begun has half the deed done.",
+        "attribution": "Horace, Epistles 1.2.40",
+        "latin_kind": "original Latin",
+        "primary_theme": "",
+        "source_language": "Latin",
+        "source_period": "antiquity",
+        "source_confidence": "curated; verify edition",
+        "source_text": "",
+        "origin": "bundled curated library",
+        "verification_status": "review source before approval",
+        "note": "",
+        "ai_review": {},
+        "review_status": "unreviewed",
+        "reviewed_at": "",
+        "review_model": "",
+        "duplicate_warning": ""
+      },
+      "post_text": "Dimidium facti, qui coepit, habet.\n\nOne who has begun has half the deed done.\n\n— Horace, Epistles 1.2.40",
+      "scheduled_for": "2026-08-03T21:15:00+00:00",
+      "status": "queued",
+      "created_at": "2026-07-27T22:18:20.211104+00:00",
+      "attempts": 0
     }
   ],
-  "history": [],
+  "history": [
+    {
+      "id": "543926d5-f322-496f-a332-3e6253c94b79",
+      "saying_id": "horace-ep-1-2-40a",
+      "saying_snapshot": {
+        "id": "horace-ep-1-2-40a",
+        "approved": true,
+        "latin": "Dimidium facti, qui coepit, habet.",
+        "translation": "One who has begun has half the deed done.",
+        "attribution": "Horace, Epistles 1.2.40",
+        "latin_kind": "original Latin",
+        "primary_theme": "",
+        "source_language": "Latin",
+        "source_period": "antiquity",
+        "source_confidence": "curated; verify edition",
+        "source_text": "",
+        "origin": "bundled curated library",
+        "verification_status": "review source before approval",
+        "note": "",
+        "ai_review": {},
+        "review_status": "unreviewed",
+        "reviewed_at": "",
+        "review_model": "",
+        "duplicate_warning": ""
+      },
+      "post_text": "Dimidium facti, qui coepit, habet.\n\nOne who has begun has half the deed done.\n\n— Horace, Epistles 1.2.40",
+      "scheduled_for": "2026-07-27T21:20:00+00:00",
+      "status": "posted",
+      "created_at": "2026-07-27T21:02:41.015741+00:00",
+      "attempts": 1,
+      "claimed_at": "2026-07-27T22:18:18.096748+00:00",
+      "posted_at": "2026-07-27T22:18:20.211028+00:00",
+      "linkedin_post_id": "urn:li:share:7487632491852496896"
+    }
+  ],
   "events": [
     {
       "at": "2026-07-27T05:43:30.597225+00:00",
@@ -1628,6 +1694,14 @@
       "at": "2026-07-27T22:18:18.096798+00:00",
       "level": "info",
       "message": "Claimed a scheduled post.",
+      "details": {
+        "queue_id": "543926d5-f322-496f-a332-3e6253c94b79"
+      }
+    },
+    {
+      "at": "2026-07-27T22:18:20.211094+00:00",
+      "level": "info",
+      "message": "Post published.",
       "details": {
         "queue_id": "543926d5-f322-496f-a332-3e6253c94b79"
       }
