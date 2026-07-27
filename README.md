@@ -1,8 +1,22 @@
+<div align="center">
+
 li_poster
+
+Human-reviewed, Latin-first LinkedIn publishing
+
+Prepare, verify, schedule, and publish short secular sayings through aStreamlit application without treating AI generation as source verification.
+
+
+
+Overview · Capabilities ·Deployment · Using the app ·AI safeguards ·Troubleshooting
+
+</div>
+
+Overview
 
 li_poster is a self-contained Streamlit application that prepares, reviews,schedules, and publishes short Latin-first posts to a connected LinkedIn memberprofile.
 
-Each post uses this format:
+Each published post uses this structure:
 
 Latin text
 
@@ -10,33 +24,184 @@ English translation
 
 — attribution
 
-The application includes:
+The application combines a curated library, optional DeepSeek editorialassistance, human approval, randomized scheduling, LinkedIn OAuth 2.0, andGitHub-backed state. It is designed for cautious personal automation ratherthan unattended high-volume posting.
 
-a curated secular sayings library;
+[!IMPORTANT]An AI-generated attribution, source language, period, translation, orconfidence label is a review lead, not proof. Only approve a saying afterchecking its wording and source against a reliable edition or scholarlyreference.
 
-CSV import and export;
+Feedback is welcome
 
-DeepSeek-assisted generation, translation, metadata backfill, and review;
+The easiest way to ask a question, report a defect, or suggest an improvementis to open a GitHub Issue.Focused code or documentation changes can be submitted through apull request.
 
-human approval controls;
+Why li_poster?
 
-randomized scheduling;
+Small personal posting automations still need durable state, authentication,duplicate protection, editorial review, and safe failure behavior. Thisapplication brings those concerns into one inspectable interface.
 
-LinkedIn OAuth 2.0 authentication and member posting;
+It is especially useful when you want to:
 
-encrypted LinkedIn-token storage;
+maintain a reviewed library of short Latin-first posts;
 
-GitHub-backed runtime state;
+translate secular sayings from Latin or another source language;
 
-dry-run, pause, queue-review, and uncertain-result safeguards; and
+explore pre-modern material from Latin, Greek, Chinese, Arabic, and othertraditions;
 
-a collapsed in-app usage and troubleshooting guide.
+randomize post dates and times inside controlled limits;
 
-This is an independent personal project. It is not affiliated with, endorsedby, or operated by LinkedIn, Microsoft, DeepSeek, GitHub, Streamlit, or theauthor's employer.
+preview a queue before anything is published;
 
-Current scope
+keep credentials in Streamlit Secrets rather than source code; and
 
-The current application publishes Latin-first sayings. Its LinkedIn connection,queue, scheduling, persistence, and review architecture could later supportother post types, but general-purpose LinkedIn content is not yet implemented.
+retain a human approval boundary around probabilistic AI output.
+
+Capabilities
+
+Application areas
+
+Area
+
+Current capability
+
+Important boundary
+
+Sayings library
+
+Review, edit, approve, import, and export sayings
+
+Only approved entries can be scheduled
+
+DeepSeek workshop
+
+Suggest, translate, review, and backfill metadata
+
+AI output is never automatically approved or published
+
+Source-language controls
+
+Prefer, balance, or require a source language
+
+The label is model-produced until independently verified
+
+Secular-content policy
+
+Screens publishable fields for excluded religious or theological language
+
+The filter is conservative and cannot replace editorial judgment
+
+Scheduling
+
+Randomizes eligible weekdays and times within configured limits
+
+Timing is approximate on Streamlit Community Cloud
+
+LinkedIn connection
+
+OAuth 2.0 connection to a LinkedIn member profile
+
+The associated LinkedIn Page is not the posting destination
+
+Publishing safety
+
+Dry-run, pause, queue inspection, claims, and uncertain-result handling
+
+A connections-only test is a real immediate post
+
+Persistence
+
+Stores operational state on a separate GitHub branch
+
+Repository visibility affects non-secret state visibility
+
+Token protection
+
+Encrypts the LinkedIn access token with Fernet before persistence
+
+Losing or rotating the key requires reconnection
+
+Activity history
+
+Records connection, library, queue, and publishing events
+
+Logs may contain operational metadata
+
+Content metadata
+
+Each library or staged-candidate record can include:
+
+Latin wording and English translation;
+
+attribution and original source text;
+
+Latin classification;
+
+primary theme;
+
+source language and period;
+
+source confidence and verification status;
+
+AI review status, duplicate warning, and policy warning; and
+
+an internal editorial note.
+
+Internal review metadata is not included in the LinkedIn post.
+
+How it works
+
+flowchart TD
+    A["Administrator in Streamlit"] --> B["Sayings library"]
+    A --> C["Optional DeepSeek workshop"]
+    C --> D["Staged, unapproved candidates"]
+    D --> B
+    B --> E["Human-approved sayings"]
+    E --> F["Randomized posting queue"]
+    F --> G["Background worker"]
+    G --> H["LinkedIn member-post API"]
+    B --> I["GitHub runtime-state branch"]
+    F --> I
+    G --> I
+    J["Streamlit Secrets"] --> C
+    J --> G
+
+The deployed Streamlit process starts a background worker. Approximately every45 seconds, while the process is awake, the worker:
+
+loads the latest state from GitHub;
+
+confirms that automation is enabled and dry-run is off;
+
+confirms that LinkedIn is connected and the token has not expired;
+
+finds and claims the next due queued item;
+
+confirms that the underlying saying remains approved;
+
+publishes the post through LinkedIn;
+
+records the result; and
+
+replenishes the randomized schedule when appropriate.
+
+[!CAUTION]Streamlit Community Cloud is not a guaranteed always-on scheduler. Anexternal app-waker can reduce hibernation, but posting times remainbest-effort and may be delayed by restarts or platform availability.
+
+Recommended workflow
+
+Keep Automation: Paused and Dry-run mode on.
+
+Connect the LinkedIn member account.
+
+Review bundled, imported, translated, or AI-generated sayings.
+
+Independently verify the Latin, translation, attribution, source language,and period.
+
+Add acceptable AI candidates to the library as unapproved entries.
+
+Approve and save only verified library entries.
+
+Configure schedule limits and fill a randomized dry-run queue.
+
+Inspect every queued post.
+
+Optionally publish one explicit connections-only test.
+
+Turn dry-run off and enable automation only after the full workflow hasbeen validated.
 
 Quick reference
 
@@ -74,7 +239,7 @@ deepseek-v4-flash
 
 Background worker interval
 
-approximately 45 seconds while awake
+Approximately 45 seconds while awake
 
 Default timezone
 
@@ -82,61 +247,64 @@ America/Toronto
 
 Recommended initial mode
 
-automation paused and dry-run on
+Automation paused and dry-run on
 
-Repository files
+Repository structure
 
-The minimal deployment needs:
+The minimal deployment contains:
 
-streamlit_app.py
-requirements.txt
-README.md
+LI_poster/
+├── README.md          # Setup, operation, security, and troubleshooting
+├── requirements.txt   # Python dependencies
+└── streamlit_app.py   # Complete monolithic Streamlit application
 
-requirements.txt:
+The application creates and maintains runtime state through the GitHub API.No database or generated state file needs to be committed to the main branch.
 
-streamlit==1.47.1
-pandas==2.3.1
-requests==2.32.4
-cryptography==45.0.5
+Quick local validation
 
-The application creates and maintains its runtime state through the GitHub API.No database or additional state file needs to be committed to the main branch.
+Local execution is optional, but it is useful before replacing the deployedfile.
 
-How the application works
+Requirements
 
-administrator
-    |
-    v
-Streamlit interface
-    |
-    +--> sayings library and DeepSeek review workflow
-    |
-    +--> randomized schedule and posting queue
-    |
-    +--> LinkedIn OAuth and member-post API
-    |
-    +--> GitHub runtime-state branch
+Python 3.12
 
-The deployed Streamlit process starts a background worker. Approximately every45 seconds, while the process is awake, the worker:
+pip
 
-loads the latest state from GitHub;
+the packages listed in requirements.txt
 
-confirms that automation is enabled and dry-run is off;
+1. Create a virtual environment
 
-confirms that LinkedIn is connected and the token has not expired;
+<details>
+<summary><strong>Windows PowerShell</strong></summary>
 
-finds the next due queued item;
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 
-claims the item so a second worker cannot post it simultaneously;
+</details>
 
-confirms that the underlying saying remains approved;
+<details>
+<summary><strong>macOS or Linux</strong></summary>
 
-publishes the post through LinkedIn;
+python3 -m venv .venv
+source .venv/bin/activate
 
-records the result; and
+</details>
 
-replenishes the randomized schedule when appropriate.
+2. Install and compile
 
-Streamlit Community Cloud is not a guaranteed always-on task scheduler. Anexternal app-waker can reduce hibernation, but posting times should still betreated as approximate.
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+python -m py_compile streamlit_app.py
+
+3. Run the application
+
+streamlit run streamlit_app.py
+
+Local OAuth testing requires a redirect URI registered in the LinkedIndeveloper application. Do not replace the working production redirect URIunless you intentionally configure and test an additional local callback.
+
+[!WARNING]Never commit .streamlit/secrets.toml, copied Streamlit Secrets, accesstokens, client secrets, passwords, or the Fernet key.
+
+Deployment and integration
 
 Prerequisites
 
@@ -599,6 +767,8 @@ Review all imported rows.
 
 Imported entries are always unapproved. Exact and near duplicates are skipped.Content conflicting with the secular wording policy is blocked.
 
+DeepSeek AI and source verification
+
 Using the DeepSeek AI workshop
 
 DeepSeek is editorial assistance, not independent source verification.
@@ -675,6 +845,46 @@ ethics; and
 learning.
 
 Arabic-source material is labelled as a modern Latin rendering from Arabic. Itmust not be labelled as original Latin.
+
+Reading an Arabic generation result
+
+In One required source language mode, successful candidates are appendedto the bottom of Staged AI Candidates. The staged count therefore riseseven when the first visible rows remain older Latin, Greek, or Chinesecandidates.
+
+Check these columns together:
+
+Field
+
+How to interpret it
+
+source_language
+
+Must say Arabic for the required-language request
+
+latin_kind
+
+Should identify the Latin as a modern rendering from Arabic
+
+source_period
+
+Should be compatible with the named author and work
+
+source_confidence
+
+low or unverified requires especially cautious review
+
+review_status
+
+caution requires an explicit override; reject cannot enter the library
+
+attribution
+
+Must identify a source that can be checked independently
+
+source_text
+
+Should preserve enough original-language evidence for comparison
+
+[!CAUTION]A plausible Latin sentence paired with source_language = Arabic may stillbe misattributed, paraphrased too freely, or derived from a later Europeanmaxim. The local validator can enforce metadata consistency; it cannot provetextual transmission or historical provenance.
 
 Replacement behavior
 
@@ -1157,6 +1367,10 @@ Required source language: Arabic
 
 Do not rely on the preferences-only mode to guarantee Arabic coverage.
 
+New candidates are appended to the staged table. If older candidates arealready present, scroll to the bottom of the table to find the newly generatedrows and confirm that source_language is Arabic.
+
+The required-language validator guarantees that the returned metadata saysArabic. It does not establish that the attribution is historically correct.Review source_confidence, source_period, attribution, source_text, andthe AI review before considering library addition. Treat caution and lowconfidence as a strong instruction to verify or discard the candidate.
+
 Balanced coverage is rejected
 
 The number of candidates must be at least the number of preferred languages.
@@ -1215,7 +1429,7 @@ Encryption protects the token but does not make a public runtime-state branchequ
 
 Revoke and replace any credential that is accidentally exposed.
 
-Operational limitations
+Known limitations
 
 Streamlit Community Cloud can hibernate or restart.
 
@@ -1267,6 +1481,36 @@ Any broader posting feature should retain the current review, dry-run, queue,vis
 
 Support and feedback
 
-For questions, defects, or suggestions, open a GitHub Issue. For proposed codeor documentation changes, open a Pull Request.
+If you want to...
+
+Recommended GitHub route
+
+Ask a question about setup or operation
+
+Open an Issue
+
+Report a bug or unexpected result
+
+Open an Issue
+
+Suggest a workflow or documentation improvement
+
+Open an Issue
+
+Propose a focused code or documentation change
+
+Submit a Pull Request
 
 Do not include credentials, access tokens, personal data, or private LinkedIncontent in an Issue or Pull Request.
+
+Project status and affiliation
+
+This is an independent personal project. It is not affiliated with, endorsedby, sponsored by, or developed on behalf of LinkedIn, Microsoft, DeepSeek,GitHub, Streamlit, the maintainer's employer, or any other organization.
+
+References to third-party products and services are descriptive and do notimply endorsement or affiliation.
+
+Maintainer note
+
+li_poster is built around a simple principle:
+
+Automate the repetitive parts of publishing while keeping attribution,source verification, approval, and uncertain outcomes under human control.
