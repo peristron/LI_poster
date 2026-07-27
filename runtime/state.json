@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "revision": 9,
+  "revision": 10,
   "settings": {
     "automation_enabled": false,
     "dry_run": true,
@@ -909,6 +909,15 @@
         "added": 2,
         "duplicates_skipped": 0
       }
+    },
+    {
+      "at": "2026-07-27T16:37:13.389923+00:00",
+      "level": "info",
+      "message": "DeepSeek candidates staged for human review.",
+      "details": {
+        "added": 2,
+        "duplicates_skipped": 0
+      }
     }
   ],
   "ai_candidates": [
@@ -1002,6 +1011,32 @@
       "origin": "DeepSeek suggestion (deepseek-v4-flash)",
       "verification_status": "AI candidate; human verification required",
       "note": ""
+    },
+    {
+      "id": "ai-3d37208a7297f2a2",
+      "approved": false,
+      "latin": "nullam rem e nihilo gigni divinitus umquam",
+      "translation": "No thing is ever born from nothing by divine power.",
+      "attribution": "Lucretius, De Rerum Natura, Book 1, line 150",
+      "latin_kind": "original Latin",
+      "source_language": "Latin",
+      "source_text": "",
+      "origin": "DeepSeek suggestion (deepseek-v4-flash)",
+      "verification_status": "AI candidate; human verification required",
+      "note": ""
+    },
+    {
+      "id": "ai-b170018ca1c0c8b7",
+      "approved": false,
+      "latin": "Da mihi ubi stem et terram movebo.",
+      "translation": "Give me a place to stand and I will move the earth.",
+      "attribution": "Attributed to Archimedes by Pappus of Alexandria, Synagoge, Book VIII",
+      "latin_kind": "modern Latin rendering from Greek",
+      "source_language": "Greek",
+      "source_text": "Δός μοι ποῦ στῶ καὶ κινῶ τὴν γῆν",
+      "origin": "DeepSeek suggestion (deepseek-v4-flash)",
+      "verification_status": "AI candidate; human verification required",
+      "note": "The exact wording in Greek is a paraphrase; the saying is proverbial."
     }
   ]
 }
