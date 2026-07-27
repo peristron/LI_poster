@@ -1,6 +1,6 @@
 {
   "schema_version": 4,
-  "revision": 13,
+  "revision": 14,
   "settings": {
     "automation_enabled": false,
     "dry_run": true,
@@ -1458,6 +1458,16 @@
         "duplicates_skipped": 0,
         "near_duplicate_warnings": 0
       }
+    },
+    {
+      "at": "2026-07-27T19:20:39.346087+00:00",
+      "level": "info",
+      "message": "DeepSeek candidates staged for human review.",
+      "details": {
+        "added": 4,
+        "duplicates_skipped": 0,
+        "near_duplicate_warnings": 0
+      }
     }
   ],
   "ai_candidates": [
@@ -1733,6 +1743,94 @@
       "reviewed_at": "",
       "review_model": "",
       "duplicate_warning": ""
+    },
+    {
+      "id": "ai-6b3988adb5377b66",
+      "approved": false,
+      "latin": "Scientia sine actione est quasi arbor sine fructu.",
+      "translation": "Knowledge without action is like a tree without fruit.",
+      "attribution": "Attributed to al-Ghazālī, Iḥyāʾ ʿUlūm al-Dīn",
+      "latin_kind": "modern Latin rendering from Arabic",
+      "primary_theme": "knowledge and action",
+      "source_language": "Arabic",
+      "source_period": "11th–12th century CE",
+      "source_confidence": "low",
+      "source_text": "",
+      "origin": "DeepSeek suggestion (deepseek-v4-flash)",
+      "verification_status": "AI candidate; human verification required",
+      "note": "Exact wording uncertain; common paraphrase of al-Ghazālī's thought. Low source confidence; verify before use.",
+      "ai_review": {},
+      "review_status": "caution",
+      "reviewed_at": "",
+      "review_model": "",
+      "duplicate_warning": "",
+      "policy_warning": ""
+    },
+    {
+      "id": "ai-24a05e81301eb34b",
+      "approved": false,
+      "latin": "Veritas est filia temporis, non auctoritatis.",
+      "translation": "Truth is the daughter of time, not of authority.",
+      "attribution": "Attributed to Ibn al-Qayyim, but also found in medieval Latin tradition",
+      "latin_kind": "modern Latin rendering from Arabic",
+      "primary_theme": "truth and authority",
+      "source_language": "Arabic",
+      "source_period": "13th–14th century CE",
+      "source_confidence": "low",
+      "source_text": "",
+      "origin": "DeepSeek suggestion (deepseek-v4-flash)",
+      "verification_status": "AI candidate; human verification required",
+      "note": "Often attributed to Ibn al-Qayyim; similar to Latin proverb. Low source confidence; verify before use.",
+      "ai_review": {},
+      "review_status": "caution",
+      "reviewed_at": "",
+      "review_model": "",
+      "duplicate_warning": "",
+      "policy_warning": ""
+    },
+    {
+      "id": "ai-581c598ff0ef1438",
+      "approved": false,
+      "latin": "Medicina est scientia corporis humani et morborum eius.",
+      "translation": "Medicine is the science of the human body and its diseases.",
+      "attribution": "Ibn Sīnā (Avicenna), Al-Qānūn fī al-Ṭibb (The Canon of Medicine), Book I",
+      "latin_kind": "modern Latin rendering from Arabic",
+      "primary_theme": "medicine",
+      "source_language": "Arabic",
+      "source_period": "11th century CE",
+      "source_confidence": "medium",
+      "source_text": "",
+      "origin": "DeepSeek suggestion (deepseek-v4-flash)",
+      "verification_status": "AI candidate; human verification required",
+      "note": "Paraphrase of the opening definition; exact Latin not original.",
+      "ai_review": {},
+      "review_status": "unreviewed",
+      "reviewed_at": "",
+      "review_model": "",
+      "duplicate_warning": "",
+      "policy_warning": ""
+    },
+    {
+      "id": "ai-aaf2574474b335bd",
+      "approved": false,
+      "latin": "Natura in minimis maxima est.",
+      "translation": "Nature is greatest in the smallest things.",
+      "attribution": "Attributed to al-Jāḥiẓ, Kitāb al-Ḥayawān (Book of Animals)",
+      "latin_kind": "modern Latin rendering from Arabic",
+      "primary_theme": "nature and observation",
+      "source_language": "Arabic",
+      "source_period": "9th century CE",
+      "source_confidence": "low",
+      "source_text": "",
+      "origin": "DeepSeek suggestion (deepseek-v4-flash)",
+      "verification_status": "AI candidate; human verification required",
+      "note": "Common theme in al-Jāḥiẓ's work; exact wording uncertain. Low source confidence; verify before use.",
+      "ai_review": {},
+      "review_status": "caution",
+      "reviewed_at": "",
+      "review_model": "",
+      "duplicate_warning": "",
+      "policy_warning": ""
     }
   ]
 }
