@@ -1,4 +1,4 @@
-"""li_poster 1.3.1: a self-contained Streamlit LinkedIn scheduler."""
+"""li_poster 1.4.0: a self-contained Streamlit LinkedIn scheduler."""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ import random
 import re
 import secrets
 import threading
+import time as clock
 import unicodedata
 import uuid
 from datetime import date, datetime, time, timedelta, timezone
@@ -35,7 +36,7 @@ st.set_page_config(
 # ---------------------------------------------------------------------------
 
 APP_NAME = "li_poster"
-APP_VERSION = "1.3.1"
+APP_VERSION = "1.4.0"
 GITHUB_API = "https://api.github.com"
 LINKEDIN_AUTHORIZE_URL = "https://www.linkedin.com/oauth/v2/authorization"
 LINKEDIN_TOKEN_URL = "https://www.linkedin.com/oauth/v2/accessToken"
@@ -50,6 +51,9 @@ MAX_HISTORY = 500
 MAX_AI_CANDIDATES = 100
 MAX_GENERATION_ATTEMPTS = 3
 MAX_METADATA_BACKFILL = 10
+WORKER_INTERVAL_SECONDS = 45
+WORKER_STALE_AFTER_SECONDS = 120
+STATE_VERIFY_ATTEMPTS = 5
 SCHEMA_VERSION = 5
 SOURCE_MODE_REQUIRED = "One required source language"
 SOURCE_MODE_BALANCED = "Balanced coverage across preferred languages"
@@ -567,6 +571,29 @@ def normalize_space(value: Any) -> str:
     return re.sub(r"\s+", " ", str(value or "")).strip()
 
 
+def normalize_bool(value: Any) -> bool:
+    """Interpret persisted, CSV, pandas, and Streamlit checkbox values safely."""
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return False
+    try:
+        if pd.isna(value):
+            return False
+    except (TypeError, ValueError):
+        pass
+    if isinstance(value, (int, float)):
+        return value != 0
+    return normalize_space(value).casefold() in {
+        "1",
+        "true",
+        "yes",
+        "y",
+        "on",
+        "checked",
+    }
+
+
 def saying_fingerprint(record: dict[str, Any]) -> str:
     basis = "|".join(
         [
@@ -714,7 +741,7 @@ def normalize_saying(
 ) -> dict[str, Any]:
     normalized = {
         "id": normalize_space(record.get("id")) or secrets.token_hex(8),
-        "approved": bool(record.get("approved", False)),
+        "approved": normalize_bool(record.get("approved", False)),
         "latin": normalize_space(record.get("latin")),
         "translation": normalize_space(record.get("translation")),
         "attribution": normalize_space(record.get("attribution")),
@@ -1696,9 +1723,15 @@ class GitHubStateStore:
         return f"{GITHUB_API}/repos/{self.repository}"
 
     def request(self, method: str, url: str, **kwargs: Any) -> requests.Response:
+        request_headers = dict(self.headers)
+        request_headers.update(kwargs.pop("headers", {}))
         try:
             return requests.request(
-                method, url, headers=self.headers, timeout=20, **kwargs
+                method,
+                url,
+                headers=request_headers,
+                timeout=20,
+                **kwargs,
             )
         except requests.RequestException as exc:
             raise StateStoreError(f"GitHub state request failed: {exc}") from exc
@@ -1737,6 +1770,10 @@ class GitHubStateStore:
             "GET",
             f"{self.repo_url}/contents/{STATE_PATH}",
             params={"ref": STATE_BRANCH},
+            headers={
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Pragma": "no-cache",
+            },
         )
         if response.status_code == 404:
             raise FileNotFoundError(STATE_PATH)
@@ -1785,6 +1822,26 @@ class GitHubStateStore:
                     if attempt == retries - 1:
                         raise
             raise StateConflictError("Runtime state update retry limit exceeded.")
+
+    def update_verified(
+        self,
+        mutator: Callable[[dict[str, Any]], Any],
+        verifier: Callable[[dict[str, Any]], bool],
+        description: str,
+    ) -> tuple[Any, dict[str, Any]]:
+        """Write state, then confirm GitHub returns the intended result."""
+        result = self.update(mutator)
+        last_state: dict[str, Any] | None = None
+        for attempt in range(STATE_VERIFY_ATTEMPTS):
+            if attempt:
+                clock.sleep(0.2 * attempt)
+            last_state, _ = self.load()
+            if verifier(last_state):
+                return result, last_state
+        raise StateStoreError(
+            f"{description} was sent to GitHub but could not be verified. "
+            "Refresh before trying again."
+        )
 
 
 @st.cache_resource
@@ -2036,7 +2093,9 @@ def generate_schedule(
     zone = ZoneInfo(timezone_name)
     local_now = now.astimezone(zone)
     settings = state["settings"]
-    approved = [item for item in state["sayings"] if bool(item.get("approved"))]
+    approved = [
+        item for item in state["sayings"] if normalize_bool(item.get("approved"))
+    ]
     if not approved:
         raise ValueError("Approve at least one saying before generating a schedule.")
 
@@ -2190,17 +2249,65 @@ class PosterWorker:
         self.timezone_name = timezone_name
         self.stop_event = threading.Event()
         self.thread: threading.Thread | None = None
+        self.lifecycle_lock = threading.Lock()
+        self.started_at = ""
         self.last_tick = ""
         self.last_error = ""
 
     def start(self) -> "PosterWorker":
-        if self.thread and self.thread.is_alive():
-            return self
-        self.thread = threading.Thread(
-            target=self.run, name="li-poster-worker", daemon=True
-        )
-        self.thread.start()
+        """Start or revive the worker without creating duplicate live threads."""
+        with self.lifecycle_lock:
+            if self.thread and self.thread.is_alive():
+                return self
+            restarting = self.thread is not None
+            if restarting:
+                try:
+                    recover_interrupted_posts(self.store)
+                except Exception as exc:
+                    self.last_error = (
+                        "Worker restart recovery check failed: " + str(exc)
+                    )
+            self.stop_event.clear()
+            self.started_at = datetime.now(timezone.utc).isoformat()
+            self.thread = threading.Thread(
+                target=self.run, name="li-poster-worker", daemon=True
+            )
+            self.thread.start()
         return self
+
+    def health(self) -> dict[str, Any]:
+        alive = bool(self.thread and self.thread.is_alive())
+        tick_age_seconds: float | None = None
+        if self.last_tick:
+            try:
+                tick_age_seconds = max(
+                    0.0,
+                    (
+                        datetime.now(timezone.utc)
+                        - datetime.fromisoformat(self.last_tick)
+                    ).total_seconds(),
+                )
+            except ValueError:
+                tick_age_seconds = None
+        starting = alive and not self.last_tick
+        stale = (
+            not alive
+            or (
+                tick_age_seconds is not None
+                and tick_age_seconds > WORKER_STALE_AFTER_SECONDS
+            )
+        )
+        ready = alive and not starting and not stale and not self.last_error
+        return {
+            "alive": alive,
+            "starting": starting,
+            "stale": stale,
+            "ready": ready,
+            "last_tick": self.last_tick,
+            "tick_age_seconds": tick_age_seconds,
+            "started_at": self.started_at,
+            "last_error": self.last_error,
+        }
 
     def run(self) -> None:
         while not self.stop_event.is_set():
@@ -2210,7 +2317,7 @@ class PosterWorker:
             except Exception as exc:
                 self.last_error = str(exc)
             self.last_tick = datetime.now(timezone.utc).isoformat()
-            self.stop_event.wait(45)
+            self.stop_event.wait(WORKER_INTERVAL_SECONDS)
 
     def tick(self) -> None:
         state, _ = self.store.load()
@@ -2270,7 +2377,7 @@ class PosterWorker:
             ),
             None,
         )
-        if not saying or not bool(saying.get("approved")):
+        if not saying or not normalize_bool(saying.get("approved")):
 
             def stop_unapproved(current: dict[str, Any]) -> None:
                 item = next(
@@ -2352,6 +2459,15 @@ class PosterWorker:
 
 def recover_interrupted_posts(store: GitHubStateStore) -> int:
     cutoff = datetime.now(timezone.utc) - timedelta(minutes=10)
+    current, _ = store.load()
+    recoverable = any(
+        item.get("status") == "publishing"
+        and item.get("claimed_at")
+        and datetime.fromisoformat(item["claimed_at"]) < cutoff
+        for item in current["queue"]
+    )
+    if not recoverable:
+        return 0
 
     def recover(state: dict[str, Any]) -> int:
         count = 0
@@ -2377,11 +2493,11 @@ def recover_interrupted_posts(store: GitHubStateStore) -> int:
 
 
 @st.cache_resource
-def start_worker(
+def get_worker(
     _store: GitHubStateStore, fernet_key: str, timezone_name: str
 ) -> PosterWorker:
     recover_interrupted_posts(_store)
-    return PosterWorker(_store, fernet_key, timezone_name).start()
+    return PosterWorker(_store, fernet_key, timezone_name)
 
 
 # ---------------------------------------------------------------------------
@@ -2417,9 +2533,15 @@ def queue_dataframe(
             item.get("saying_snapshot", {}),
         )
         scheduled = pd.Timestamp(item["scheduled_for"]).tz_convert(timezone_name)
+        posted_at = ""
+        if item.get("posted_at"):
+            posted_at = pd.Timestamp(item["posted_at"]).tz_convert(
+                timezone_name
+            ).strftime("%Y-%m-%d %H:%M:%S %Z")
         rows.append(
             {
-                "when": scheduled.strftime("%Y-%m-%d %H:%M %Z"),
+                "scheduled": scheduled.strftime("%Y-%m-%d %H:%M %Z"),
+                "published": posted_at,
                 "status": item["status"],
                 "latin": saying.get("latin", "Missing saying"),
                 "translation": saying.get("translation", ""),
@@ -2448,7 +2570,18 @@ def render_dashboard(
     attention = sum(
         row["status"] == "needs_review" for row in state["queue"]
     )
-    columns = st.columns(4)
+    health = worker.health()
+    if health["last_error"]:
+        worker_label = "Error"
+    elif health["ready"]:
+        worker_label = "Active"
+    elif health["starting"]:
+        worker_label = "Starting"
+    elif health["alive"]:
+        worker_label = "Stale"
+    else:
+        worker_label = "Stopped"
+    columns = st.columns(5)
     columns[0].metric(
         "Automation", "On" if settings["automation_enabled"] else "Paused"
     )
@@ -2457,17 +2590,64 @@ def render_dashboard(
     )
     columns[2].metric("Queued", queued)
     columns[3].metric("Needs review", attention)
+    columns[4].metric("Worker", worker_label)
 
     if settings["dry_run"]:
         st.warning(
             "Dry-run mode is on. Scheduled items will not be published."
         )
-    if worker.last_error:
-        st.error(f"Background worker error: {worker.last_error}")
-    elif worker.last_tick:
-        st.caption(f"Background worker last checked at {worker.last_tick}.")
+    if health["last_error"]:
+        st.error(f"Background worker error: {health['last_error']}")
+    if health["stale"]:
+        st.error(
+            "The background worker is not healthy. Keep automation paused, "
+            "refresh this page once, and reboot the Streamlit app if the worker "
+            "does not return to Active."
+        )
+    elif health["last_tick"]:
+        age = health["tick_age_seconds"]
+        age_text = f" approximately {int(age)} second(s) ago" if age is not None else ""
+        st.caption(
+            f"Background worker last checked at {health['last_tick']}{age_text}. "
+            "This is a page snapshot; use Refresh dashboard to update it."
+        )
     else:
         st.caption("The background worker is starting.")
+
+    due_items = [
+        item
+        for item in state["queue"]
+        if item["status"] == "queued"
+        and datetime.fromisoformat(item["scheduled_for"])
+        <= datetime.now(timezone.utc)
+    ]
+    if (
+        due_items
+        and settings["automation_enabled"]
+        and not settings["dry_run"]
+    ):
+        oldest_due = min(
+            datetime.fromisoformat(item["scheduled_for"]) for item in due_items
+        )
+        overdue_minutes = int(
+            (datetime.now(timezone.utc) - oldest_due).total_seconds() // 60
+        )
+        message = (
+            f"{len(due_items)} queued post(s) are due; the oldest is "
+            f"{max(overdue_minutes, 0)} minute(s) overdue."
+        )
+        if overdue_minutes >= 3:
+            st.error(
+                message
+                + " Pause automation and inspect Activity if this does not clear "
+                "after refreshing."
+            )
+        else:
+            st.info(message + " The worker should process it shortly.")
+
+    if st.button("Refresh dashboard", key="refresh_dashboard"):
+        worker.start()
+        st.rerun()
 
     st.subheader("Posting queue")
     frame = queue_dataframe(state, timezone_name)
@@ -2548,10 +2728,11 @@ def render_dashboard(
 ### Safe first-time workflow
 
 1. Confirm the Dashboard shows **LinkedIn: Connected**, **Automation:
-   Paused**, and **Dry-run mode is on**.
+   Paused**, **Worker: Active**, and **Dry-run mode is on**.
 2. Open **Sayings**. Review the Latin, translation, attribution,
    classification, source information, and internal note. Approve only entries
-   you are comfortable publishing, then select **Save sayings**.
+   you are comfortable publishing, then select **Save sayings**. Wait for the
+   persistent “saved and verified” confirmation.
 3. Optionally use **Import sayings from CSV**. Imported rows are forced to
    unapproved status.
 4. Optionally use the **DeepSeek AI workshop**. Generated and translated
@@ -2656,6 +2837,13 @@ def render_dashboard(
   Streamlit process back. Community hosting and wake-up timing are best-effort,
   so scheduled times should be treated as approximate rather than guaranteed
   to the minute.
+- **Worker is Starting, Stale, or Stopped:** select **Refresh dashboard** once.
+  If the status does not become **Active**, pause automation and use
+  **Manage app → Reboot**. The app now revives a stopped cached worker on every
+  Streamlit rerun and blocks new automation while worker health is uncertain.
+- **A save or cancellation is uncertain:** do not click repeatedly. The app
+  now reads the GitHub state back after each critical write and shows a
+  persistent confirmation only after the intended result is verified.
 - **Changing schedule or content:** pause automation first. Cancel queued
   posts, make and save the changes, then refill and review the schedule.
 
@@ -2843,6 +3031,18 @@ def render_sayings(
         },
         key=f"sayings_editor_{state['revision']}",
     )
+    persisted_approved_count = sum(
+        normalize_bool(item.get("approved")) for item in state["sayings"]
+    )
+    editor_approved_count = sum(
+        normalize_bool(value) for value in edited["approved"].tolist()
+    )
+    if editor_approved_count != persisted_approved_count:
+        st.info(
+            f"Unsaved approval changes: the editor currently selects "
+            f"{editor_approved_count}, while GitHub has "
+            f"{persisted_approved_count} saved."
+        )
     left, right = st.columns(2)
     if left.button("Save sayings", type="primary"):
         raw_records = edited.fillna("").to_dict("records")
@@ -2863,9 +3063,36 @@ def render_sayings(
                     count=len(records),
                 )
 
-            store.update(save)
-            st.success("Sayings saved.")
-            st.rerun()
+            expected_approvals = {
+                record["id"]: normalize_bool(record.get("approved"))
+                for record in records
+            }
+
+            def sayings_saved(current: dict[str, Any]) -> bool:
+                persisted = {
+                    record["id"]: normalize_bool(record.get("approved"))
+                    for record in current["sayings"]
+                }
+                return (
+                    len(current["sayings"]) == len(records)
+                    and persisted == expected_approvals
+                )
+
+            try:
+                store.update_verified(
+                    save,
+                    sayings_saved,
+                    "The sayings library update",
+                )
+            except StateStoreError as exc:
+                st.error(str(exc))
+            else:
+                saved_count = sum(expected_approvals.values())
+                st.session_state["sayings_notice"] = (
+                    f"Sayings saved and verified: {saved_count} of "
+                    f"{len(records)} approved."
+                )
+                st.rerun()
 
     right.download_button(
         "Download sayings CSV",
@@ -2874,11 +3101,9 @@ def render_sayings(
         "text/csv",
     )
 
-    approved_count = sum(
-        bool(item.get("approved")) for item in state["sayings"]
-    )
     st.caption(
-        f"{approved_count} of {len(state['sayings'])} sayings are approved."
+        f"{persisted_approved_count} of {len(state['sayings'])} sayings are "
+        "approved in GitHub state."
     )
 
     with st.expander("Import sayings from CSV"):
@@ -3543,11 +3768,18 @@ def render_schedule(
     store: GitHubStateStore,
     state: dict[str, Any],
     timezone_name: str,
+    worker: PosterWorker,
 ) -> None:
     st.header("Schedule")
+    notice = st.session_state.pop("schedule_notice", "")
+    if notice:
+        st.success(notice)
+    warning_notice = st.session_state.pop("schedule_warning", "")
+    if warning_notice:
+        st.warning(warning_notice)
     settings = state["settings"]
     approved_count = sum(
-        bool(item.get("approved")) for item in state["sayings"]
+        normalize_bool(item.get("approved")) for item in state["sayings"]
     )
     active_unique = {
         item["saying_id"]
@@ -3625,6 +3857,8 @@ def render_schedule(
 
     if submitted:
         errors = []
+        if settings["automation_enabled"]:
+            errors.append("Pause automation before changing schedule settings.")
         if minimum > maximum:
             errors.append("Minimum posts cannot exceed maximum posts.")
         if not selected_days:
@@ -3654,29 +3888,91 @@ def render_schedule(
                 )
                 append_event(current, "info", "Schedule settings updated.")
 
-            store.update(save)
-            st.success("Schedule settings saved.")
-            st.rerun()
+            expected_settings = {
+                "posts_per_week_min": int(minimum),
+                "posts_per_week_max": int(maximum),
+                "allowed_weekdays": [
+                    WEEKDAYS.index(day) for day in selected_days
+                ],
+                "earliest_time": earliest.strftime("%H:%M"),
+                "latest_time": latest.strftime("%H:%M"),
+                "schedule_horizon_days": int(horizon),
+                "min_spacing_hours": int(spacing),
+                "max_post_chars": int(maximum_characters),
+                "visibility": visibility,
+                "dry_run": bool(dry_run),
+            }
 
+            def settings_saved(current: dict[str, Any]) -> bool:
+                return all(
+                    current["settings"].get(key) == value
+                    for key, value in expected_settings.items()
+                )
+
+            try:
+                store.update_verified(
+                    save,
+                    settings_saved,
+                    "The schedule settings update",
+                )
+            except StateStoreError as exc:
+                st.error(str(exc))
+            else:
+                st.session_state["schedule_notice"] = (
+                    "Schedule settings saved and verified."
+                )
+                st.rerun()
+
+    automation_enabled = bool(settings["automation_enabled"])
     left, right = st.columns(2)
-    if left.button("Fill randomized schedule", type="primary"):
+    if automation_enabled:
+        st.info(
+            "Pause automation before refilling or changing the active queue. "
+            "Pausing does not cancel already queued posts."
+        )
+    if left.button(
+        "Fill randomized schedule",
+        type="primary",
+        disabled=automation_enabled,
+    ):
+        before_ids = {item["id"] for item in state["queue"]}
+        added_holder: dict[str, int] = {"count": 0}
+
+        def fill_schedule(current: dict[str, Any]) -> int:
+            added_holder["count"] = generate_schedule(current, timezone_name)
+            return added_holder["count"]
+
+        def schedule_saved(current: dict[str, Any]) -> bool:
+            new_ids = {
+                item["id"]
+                for item in current["queue"]
+                if item["id"] not in before_ids
+            }
+            return len(new_ids) >= added_holder["count"]
+
         try:
-            added = store.update(
-                lambda current: generate_schedule(current, timezone_name)
+            added, _ = store.update_verified(
+                fill_schedule,
+                schedule_saved,
+                "The randomized schedule update",
             )
-            st.success(f"Added {added} scheduled post(s).")
+            st.session_state["schedule_notice"] = (
+                f"Randomized schedule saved and verified: "
+                f"{added} post(s) added."
+            )
             st.rerun()
         except ValueError as exc:
             st.error(str(exc))
+        except StateStoreError as exc:
+            st.error(str(exc))
 
-    automation_enabled = bool(settings["automation_enabled"])
     action = (
         "Pause automation" if automation_enabled else "Enable automation"
     )
     if right.button(action):
         queued = any(row["status"] == "queued" for row in state["queue"])
         approved = any(
-            bool(row.get("approved")) for row in state["sayings"]
+            normalize_bool(row.get("approved")) for row in state["sayings"]
         )
         if not automation_enabled and not state["linkedin"]["connected"]:
             st.error("Connect LinkedIn before enabling automation.")
@@ -3686,6 +3982,12 @@ def render_schedule(
             st.error("Approve at least one saying first.")
         elif not automation_enabled and not queued:
             st.error("Fill the randomized schedule first.")
+        elif not automation_enabled and not worker.health()["ready"]:
+            st.error(
+                "The background worker is not Active. Refresh the Dashboard "
+                "and reboot the Streamlit app if its status remains Starting, "
+                "Stale, or Stopped."
+            )
         else:
 
             def toggle(current: dict[str, Any]) -> None:
@@ -3700,8 +4002,28 @@ def render_schedule(
                     else "Automation enabled.",
                 )
 
-            store.update(toggle)
-            st.rerun()
+            expected_enabled = not automation_enabled
+            try:
+                store.update_verified(
+                    toggle,
+                    lambda current: bool(
+                        current["settings"]["automation_enabled"]
+                    )
+                    == expected_enabled,
+                    "The automation status update",
+                )
+            except StateStoreError as exc:
+                st.error(str(exc))
+            else:
+                st.session_state["schedule_notice"] = (
+                    "Automation enabled and verified."
+                    if expected_enabled
+                    else (
+                        "Automation paused and verified. Existing queued posts "
+                        "remain queued."
+                    )
+                )
+                st.rerun()
 
     with st.expander("Cancel queued posts"):
         st.warning(
@@ -3729,9 +4051,27 @@ def render_schedule(
                 )
                 return count
 
-            count = store.update(cancel)
-            st.success(f"Cancelled {count} queued post(s).")
-            st.rerun()
+            try:
+                count, _ = store.update_verified(
+                    cancel,
+                    lambda current: (
+                        not any(
+                            item["status"] == "queued"
+                            for item in current["queue"]
+                        )
+                        and not bool(
+                            current["settings"]["automation_enabled"]
+                        )
+                    ),
+                    "The queue cancellation",
+                )
+            except StateStoreError as exc:
+                st.error(str(exc))
+            else:
+                st.session_state["schedule_notice"] = (
+                    f"Cancelled {count} queued post(s); automation is paused."
+                )
+                st.rerun()
 
 
 def render_linkedin_setup(
@@ -3765,7 +4105,9 @@ def render_linkedin_setup(
 
     with st.expander("Publish a connections-only test"):
         approved = [
-            item for item in state["sayings"] if bool(item.get("approved"))
+            item
+            for item in state["sayings"]
+            if normalize_bool(item.get("approved"))
         ]
         st.warning(
             "This control creates a real LinkedIn post immediately and does "
@@ -3901,11 +4243,14 @@ def main() -> None:
 
     # Start before the password gate so an external app-waker visit is enough
     # to restart the posting worker after Streamlit hibernation.
-    worker = start_worker(
+    worker = get_worker(
         store,
         config["FERNET_KEY"],
         timezone_name,
     )
+    # This call runs on every Streamlit rerun. It is a no-op while the cached
+    # thread is alive and revives it if the cached worker thread has stopped.
+    worker.start()
 
     if not require_login(config["ADMIN_PASSWORD"]):
         st.stop()
@@ -3932,7 +4277,7 @@ def main() -> None:
     with sayings:
         render_sayings(store, state, config)
     with schedule:
-        render_schedule(store, state, timezone_name)
+        render_schedule(store, state, timezone_name, worker)
     with linkedin:
         render_linkedin_setup(store, state, config)
     with activity:
