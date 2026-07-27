@@ -1,6 +1,6 @@
 {
   "schema_version": 4,
-  "revision": 15,
+  "revision": 16,
   "settings": {
     "automation_enabled": false,
     "dry_run": true,
@@ -32,7 +32,7 @@
   "sayings": [
     {
       "id": "seneca-ep-1",
-      "approved": true,
+      "approved": false,
       "latin": "Dum differtur, vita transcurrit.",
       "translation": "While it is postponed, life passes by.",
       "attribution": "Seneca, Epistulae Morales 1.2",
@@ -1536,6 +1536,14 @@
     },
     {
       "at": "2026-07-27T20:39:45.089006+00:00",
+      "level": "info",
+      "message": "Sayings library updated.",
+      "details": {
+        "count": 65
+      }
+    },
+    {
+      "at": "2026-07-27T20:40:26.558790+00:00",
       "level": "info",
       "message": "Sayings library updated.",
       "details": {
