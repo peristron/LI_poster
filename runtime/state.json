@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "revision": 2,
+  "revision": 3,
   "settings": {
     "automation_enabled": false,
     "dry_run": true,
@@ -28,7 +28,10 @@
     "person_id": "",
     "display_name": ""
   },
-  "oauth": {},
+  "oauth": {
+    "state_hash": "a8b19abf89b34a128eb54aaaa5f60676e2f30adbc8421d20d14514879a86ad35",
+    "expires_at": "2026-07-27T05:53:05.460476+00:00"
+  },
   "sayings": [
     {
       "id": "seneca-ep-1",
