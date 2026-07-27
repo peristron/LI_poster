@@ -1,6 +1,6 @@
 {
   "schema_version": 4,
-  "revision": 25,
+  "revision": 26,
   "settings": {
     "automation_enabled": false,
     "dry_run": false,
@@ -1572,6 +1572,14 @@
       "message": "Queued posts cancelled and automation paused.",
       "details": {
         "count": 1
+      }
+    },
+    {
+      "at": "2026-07-27T20:59:44.654610+00:00",
+      "level": "warning",
+      "message": "Queued posts cancelled and automation paused.",
+      "details": {
+        "count": 0
       }
     }
   ],
