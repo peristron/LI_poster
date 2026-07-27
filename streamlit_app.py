@@ -1,4 +1,4 @@
-"""li_poster: a self-contained Streamlit LinkedIn scheduler."""
+"""li_poster 1.2.0: a self-contained Streamlit LinkedIn scheduler."""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ import random
 import re
 import secrets
 import threading
+import unicodedata
 import uuid
 from datetime import date, datetime, time, timedelta, timezone
 from typing import Any, Callable
@@ -34,7 +35,7 @@ st.set_page_config(
 # ---------------------------------------------------------------------------
 
 APP_NAME = "li_poster"
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.2.0"
 GITHUB_API = "https://api.github.com"
 LINKEDIN_AUTHORIZE_URL = "https://www.linkedin.com/oauth/v2/authorization"
 LINKEDIN_TOKEN_URL = "https://www.linkedin.com/oauth/v2/accessToken"
@@ -47,7 +48,7 @@ STATE_PATH = "runtime/state.json"
 MAX_EVENTS = 500
 MAX_HISTORY = 500
 MAX_AI_CANDIDATES = 100
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 WEEKDAYS = [
     "Monday",
     "Tuesday",
@@ -557,6 +558,81 @@ def saying_fingerprint(record: dict[str, Any]) -> str:
     return hashlib.sha256(basis.encode("utf-8")).hexdigest()
 
 
+def latin_search_key(value: Any) -> str:
+    decomposed = unicodedata.normalize("NFKD", normalize_space(value).casefold())
+    without_marks = "".join(
+        character
+        for character in decomposed
+        if not unicodedata.combining(character)
+    )
+    return re.sub(r"[^a-z]+", " ", without_marks).strip()
+
+
+def attribution_author(value: Any) -> str:
+    attribution = normalize_space(value).casefold()
+    return re.split(r"[,;]", attribution, maxsplit=1)[0].strip()
+
+
+def near_duplicate_match(
+    candidate: dict[str, Any],
+    existing_records: list[dict[str, Any]],
+) -> tuple[dict[str, Any], str] | None:
+    candidate_key = latin_search_key(candidate.get("latin"))
+    candidate_tokens = candidate_key.split()
+    if not candidate_tokens:
+        return None
+    candidate_set = set(candidate_tokens)
+    candidate_author = attribution_author(candidate.get("attribution"))
+    for existing in existing_records:
+        existing_key = latin_search_key(existing.get("latin"))
+        existing_tokens = existing_key.split()
+        if not existing_tokens:
+            continue
+        if candidate_key == existing_key:
+            return existing, "same normalized Latin text"
+        existing_set = set(existing_tokens)
+        union = candidate_set | existing_set
+        similarity = (
+            len(candidate_set & existing_set) / len(union) if union else 0.0
+        )
+        same_author = bool(candidate_author) and candidate_author == (
+            attribution_author(existing.get("attribution"))
+        )
+        shorter, longer = sorted(
+            [candidate_key, existing_key],
+            key=len,
+        )
+        contained = len(shorter.split()) >= 2 and shorter in longer
+        reordered_same_words = (
+            len(candidate_tokens) >= 2
+            and len(candidate_tokens) == len(existing_tokens)
+            and candidate_set == existing_set
+        )
+        same_author_subset = (
+            same_author
+            and min(len(candidate_set), len(existing_set)) >= 2
+            and (
+                candidate_set.issubset(existing_set)
+                or existing_set.issubset(candidate_set)
+            )
+        )
+        if reordered_same_words or (
+            same_author
+            and (contained or similarity >= 0.72 or same_author_subset)
+        ):
+            reason = (
+                "same words in a different order"
+                if reordered_same_words
+                else (
+                    "same core Latin words with the same attributed author"
+                    if same_author_subset
+                    else "substantial Latin overlap with the same attributed author"
+                )
+            )
+            return existing, reason
+    return None
+
+
 def normalize_saying(
     record: dict[str, Any],
     *,
@@ -580,15 +656,53 @@ def normalize_saying(
         or "needs human verification",
         "note": normalize_space(record.get("note")),
     }
+    ai_review = record.get("ai_review")
+    normalized["ai_review"] = (
+        copy.deepcopy(ai_review) if isinstance(ai_review, dict) else {}
+    )
+    status = normalize_space(record.get("review_status")).casefold()
+    normalized["review_status"] = (
+        status if status in {"unreviewed", "pass", "caution", "reject"} else "unreviewed"
+    )
+    normalized["reviewed_at"] = normalize_space(record.get("reviewed_at"))
+    normalized["review_model"] = normalize_space(record.get("review_model"))
+    normalized["duplicate_warning"] = normalize_space(
+        record.get("duplicate_warning")
+    )
     return normalized
 
 
 def merge_curated_library(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    active = [
-        normalize_saying(record)
-        for record in records
-        if str(record.get("id", "")) not in RETIRED_SEED_IDS
-    ]
+    seed_by_id = {seed["id"]: seed for seed in SEED_SAYINGS}
+    active: list[dict[str, Any]] = []
+    for raw in records:
+        if str(raw.get("id", "")) in RETIRED_SEED_IDS:
+            continue
+        record = normalize_saying(raw)
+        seed = seed_by_id.get(record["id"])
+        if seed:
+            if normalize_space(raw.get("source_language")).casefold() in {
+                "",
+                "unknown",
+            }:
+                record["source_language"] = seed["source_language"]
+            if not normalize_space(raw.get("source_text")):
+                record["source_text"] = seed["source_text"]
+            if normalize_space(raw.get("origin")).casefold() in {
+                "",
+                "manual entry",
+            }:
+                record["origin"] = seed["origin"]
+            if normalize_space(raw.get("verification_status")).casefold() in {
+                "",
+                "needs human verification",
+            }:
+                record["verification_status"] = seed[
+                    "verification_status"
+                ]
+            if not normalize_space(raw.get("note")) and seed.get("note"):
+                record["note"] = seed["note"]
+        active.append(record)
     ids = {record["id"] for record in active}
     fingerprints = {saying_fingerprint(record) for record in active}
     for seed in SEED_SAYINGS:
@@ -599,6 +713,33 @@ def merge_curated_library(records: list[dict[str, Any]]) -> list[dict[str, Any]]
         ids.add(seed["id"])
         fingerprints.add(fingerprint)
     return active
+
+
+def normalize_ai_candidates(
+    records: list[dict[str, Any]],
+    sayings: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    normalized: list[dict[str, Any]] = []
+    for raw in records:
+        candidate = normalize_saying(
+            raw,
+            default_origin="DeepSeek candidate",
+        )
+        if not candidate["duplicate_warning"]:
+            near_match = near_duplicate_match(
+                candidate,
+                sayings + normalized,
+            )
+            if near_match:
+                existing, reason = near_match
+                candidate["duplicate_warning"] = (
+                    f"Possible duplicate of “{existing['latin']}” "
+                    f"({existing['attribution']}): {reason}."
+                )
+                if candidate["review_status"] != "reject":
+                    candidate["review_status"] = "caution"
+        normalized.append(candidate)
+    return normalized[-MAX_AI_CANDIDATES:]
 
 
 def new_state() -> dict[str, Any]:
@@ -650,10 +791,10 @@ def normalize_state(state: dict[str, Any]) -> dict[str, Any]:
         list(state.get("sayings") or [])
     )
     state.setdefault("ai_candidates", [])
-    state["ai_candidates"] = [
-        normalize_saying(record, default_origin="DeepSeek candidate")
-        for record in list(state["ai_candidates"] or [])
-    ][-MAX_AI_CANDIDATES:]
+    state["ai_candidates"] = normalize_ai_candidates(
+        list(state["ai_candidates"] or []),
+        state["sayings"],
+    )
     state.setdefault("queue", [])
     state.setdefault("history", [])
     state.setdefault("events", [])
@@ -823,6 +964,7 @@ def generate_deepseek_sayings(
     quantity: int,
     themes: str,
     source_preferences: str,
+    existing_sayings: list[dict[str, Any]],
 ) -> tuple[list[dict[str, Any]], list[str]]:
     system_prompt = """
 You are a cautious classical-language editorial assistant. Return JSON only.
@@ -833,7 +975,9 @@ Never invent an author, work, section, source text, or claim of original Latin.
 For a Latin author, quote the original Latin. For a source in another language,
 create a concise modern Latin rendering and label it honestly. The English
 translation must match the Latin. A candidate may be plausible yet must still
-be treated as unverified.
+be treated as unverified. The user will supply an existing-library list. Do not
+return the same saying, a shortened excerpt of it, a reordered version of it,
+or a close paraphrase attributed to the same source.
 
 Return this JSON shape:
 {
@@ -851,11 +995,21 @@ Return this JSON shape:
   ]
 }
 """.strip()
+    existing_compact = [
+        {
+            "latin": normalize_space(item.get("latin")),
+            "attribution": normalize_space(item.get("attribution")),
+        }
+        for item in existing_sayings
+    ]
     user_prompt = (
         f"Return exactly {int(quantity)} distinct candidates in JSON. "
         f"Preferred themes: {normalize_space(themes) or 'wisdom, time, learning, courage, friendship'}. "
         f"Source preferences: {normalize_space(source_preferences) or 'a varied secular selection'}. "
-        "Keep each finished Latin/translation/attribution post concise."
+        "Keep each finished Latin/translation/attribution post concise. "
+        "Do not duplicate or closely overlap any entry in this existing "
+        "library JSON: "
+        + json.dumps(existing_compact, ensure_ascii=False)
     )
     parsed = call_deepseek_json(
         api_key,
@@ -965,7 +1119,12 @@ Return:
   "translation_assessment": "...",
   "attribution_assessment": "...",
   "secularity_assessment": "...",
-  "recommended_action": "..."
+  "recommended_action": "...",
+  "corrected_latin": "corrected wording when appropriate, otherwise blank",
+  "corrected_translation": "matching translation or blank",
+  "corrected_attribution": "corrected attribution or blank",
+  "corrected_latin_kind": "corrected classification or blank",
+  "correction_reason": "why the correction is suggested or blank"
 }
 """.strip()
     parsed = call_deepseek_json(
@@ -986,7 +1145,19 @@ Return:
     ]
     if any(not normalize_space(parsed.get(field)) for field in required):
         raise DeepSeekError("DeepSeek returned an incomplete review.")
-    return {field: normalize_space(parsed[field]) for field in required}
+    result = {field: normalize_space(parsed[field]) for field in required}
+    result["overall"] = result["overall"].casefold()
+    if result["overall"] not in {"pass", "caution", "reject"}:
+        raise DeepSeekError("DeepSeek returned an invalid review status.")
+    for field in (
+        "corrected_latin",
+        "corrected_translation",
+        "corrected_attribution",
+        "corrected_latin_kind",
+        "correction_reason",
+    ):
+        result[field] = normalize_space(parsed.get(field))
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -1897,6 +2068,12 @@ def render_dashboard(
 - DeepSeek requests use the API account configured by `DEEPSEEK_API_KEY` and
   may incur usage charges. The API key is never displayed or written to GitHub
   runtime state.
+- Generation requests include a compact copy of the existing library to reduce
+  repeats. Local near-duplicate checks can still flag a result after it returns.
+- AI reviews are saved with each staged candidate. A `caution` result requires
+  an explicit override before it can be added as unapproved; a `reject` result
+  cannot be added. A proposed correction becomes a separate unreviewed
+  candidate and never changes the original automatically.
 - Check AI-generated Latin and attribution against a reliable edition or other
   authoritative source before approval.
 
@@ -2006,7 +2183,8 @@ def add_unapproved_records(
         )
         record["approved"] = False
         fingerprint = saying_fingerprint(record)
-        if fingerprint in fingerprints:
+        near_match = near_duplicate_match(record, current["sayings"])
+        if fingerprint in fingerprints or near_match:
             duplicates += 1
             continue
         current["sayings"].append(record)
@@ -2025,19 +2203,37 @@ def add_unapproved_records(
 def stage_ai_candidates(
     current: dict[str, Any],
     candidates: list[dict[str, Any]],
-) -> tuple[int, int]:
+) -> tuple[int, int, int]:
     fingerprints = {
         saying_fingerprint(item)
         for item in current["sayings"] + current["ai_candidates"]
     }
     added = 0
     duplicates = 0
-    for candidate in candidates:
+    warnings = 0
+    for raw in candidates:
+        candidate = normalize_saying(
+            raw,
+            default_origin="DeepSeek candidate",
+        )
         fingerprint = saying_fingerprint(candidate)
         if fingerprint in fingerprints:
             duplicates += 1
             continue
-        current["ai_candidates"].append(copy.deepcopy(candidate))
+        near_match = near_duplicate_match(
+            candidate,
+            current["sayings"] + current["ai_candidates"],
+        )
+        if near_match:
+            existing, reason = near_match
+            candidate["duplicate_warning"] = (
+                f"Possible duplicate of “{existing['latin']}” "
+                f"({existing['attribution']}): {reason}."
+            )
+            if candidate["review_status"] != "reject":
+                candidate["review_status"] = "caution"
+            warnings += 1
+        current["ai_candidates"].append(candidate)
         fingerprints.add(fingerprint)
         added += 1
     current["ai_candidates"] = current["ai_candidates"][
@@ -2049,8 +2245,9 @@ def stage_ai_candidates(
         "DeepSeek candidates staged for human review.",
         added=added,
         duplicates_skipped=duplicates,
+        near_duplicate_warnings=warnings,
     )
-    return added, duplicates
+    return added, duplicates, warnings
 
 
 def render_sayings(
@@ -2216,8 +2413,9 @@ def render_sayings(
                                 int(quantity),
                                 themes,
                                 sources,
+                                state["sayings"] + state["ai_candidates"],
                             )
-                        added, duplicates = store.update(
+                        added, duplicates, near_warnings = store.update(
                             lambda current: stage_ai_candidates(
                                 current,
                                 candidates,
@@ -2227,6 +2425,11 @@ def render_sayings(
                             f"Staged {added} candidate(s); skipped "
                             f"{duplicates} duplicate(s)."
                         )
+                        if near_warnings:
+                            message += (
+                                f" Flagged {near_warnings} possible near-"
+                                "duplicate(s)."
+                            )
                         if warnings:
                             message += f" {len(warnings)} malformed candidate(s) were rejected."
                         st.session_state["sayings_notice"] = message
@@ -2265,7 +2468,7 @@ def render_sayings(
                                 source_language,
                                 supplied_attribution,
                             )
-                        added, duplicates = store.update(
+                        added, duplicates, near_warnings = store.update(
                             lambda current: stage_ai_candidates(
                                 current,
                                 [candidate],
@@ -2275,6 +2478,11 @@ def render_sayings(
                             f"Staged {added} translation candidate(s); skipped "
                             f"{duplicates} duplicate(s)."
                         )
+                        if near_warnings:
+                            st.session_state["sayings_notice"] += (
+                                f" Flagged {near_warnings} possible "
+                                "near-duplicate(s)."
+                            )
                         st.rerun()
                     except (DeepSeekError, ValueError) as exc:
                         st.error(str(exc))
@@ -2295,29 +2503,145 @@ def render_sayings(
                         options=list(labels),
                         format_func=lambda value: labels[value],
                     )
+                    selected = next(
+                        item
+                        for item in candidates
+                        if item["id"] == selected_id
+                    )
                     if st.button("Ask DeepSeek to review this candidate"):
-                        selected = next(
-                            item
-                            for item in candidates
-                            if item["id"] == selected_id
-                        )
                         try:
                             with st.spinner("DeepSeek is reviewing..."):
-                                st.session_state["deepseek_review"] = (
-                                    review_with_deepseek(
-                                        api_key,
-                                        model,
-                                        selected,
-                                    )
+                                review_result = review_with_deepseek(
+                                    api_key,
+                                    model,
+                                    selected,
                                 )
+                            def persist_review(
+                                current: dict[str, Any]
+                            ) -> None:
+                                candidate = next(
+                                    item
+                                    for item in current["ai_candidates"]
+                                    if item["id"] == selected_id
+                                )
+                                candidate["ai_review"] = review_result
+                                candidate["reviewed_at"] = datetime.now(
+                                    timezone.utc
+                                ).isoformat()
+                                candidate["review_model"] = model
+                                effective_status = review_result["overall"]
+                                if (
+                                    candidate.get("duplicate_warning")
+                                    and effective_status == "pass"
+                                ):
+                                    effective_status = "caution"
+                                candidate["review_status"] = effective_status
+                                append_event(
+                                    current,
+                                    "info",
+                                    "DeepSeek candidate review saved.",
+                                    candidate_id=selected_id,
+                                    status=effective_status,
+                                    model=model,
+                                )
+
+                            store.update(persist_review)
+                            st.rerun()
                         except DeepSeekError as exc:
                             st.error(str(exc))
-                    review = st.session_state.get("deepseek_review")
+                    review = selected.get("ai_review") or {}
                     if review:
+                        st.markdown(
+                            f"**Saved review status:** "
+                            f"`{selected.get('review_status', 'unreviewed')}`"
+                        )
                         st.json(review)
                         st.caption(
                             "This is an AI assessment, not independent source verification."
                         )
+                        corrected_latin = normalize_space(
+                            review.get("corrected_latin")
+                        )
+                        if (
+                            corrected_latin
+                            and latin_search_key(corrected_latin)
+                            != latin_search_key(selected["latin"])
+                        ):
+                            st.info(
+                                "The review proposed corrected wording. "
+                                "Staging it creates a new unreviewed candidate; "
+                                "it does not alter or approve the original."
+                            )
+                            if st.button(
+                                "Stage the reviewed correction",
+                                key=f"stage_correction_{selected_id}",
+                            ):
+                                corrected_raw = {
+                                    **selected,
+                                    "id": f"ai-{secrets.token_hex(8)}",
+                                    "approved": False,
+                                    "latin": corrected_latin,
+                                    "translation": normalize_space(
+                                        review.get("corrected_translation")
+                                    )
+                                    or selected["translation"],
+                                    "attribution": normalize_space(
+                                        review.get("corrected_attribution")
+                                    )
+                                    or selected["attribution"],
+                                    "latin_kind": normalize_space(
+                                        review.get("corrected_latin_kind")
+                                    )
+                                    or selected["latin_kind"],
+                                    "origin": (
+                                        f"DeepSeek reviewed correction ({model})"
+                                    ),
+                                    "verification_status": (
+                                        "AI-corrected candidate; human "
+                                        "verification required"
+                                    ),
+                                    "note": normalize_space(
+                                        review.get("correction_reason")
+                                    )
+                                    or "Correction suggested by AI review.",
+                                    "review_status": "unreviewed",
+                                    "ai_review": {},
+                                    "reviewed_at": "",
+                                    "review_model": "",
+                                    "duplicate_warning": "",
+                                    "secular": True,
+                                }
+                                try:
+                                    corrected = validate_ai_candidate(
+                                        corrected_raw,
+                                        origin=corrected_raw["origin"],
+                                    )
+                                    (
+                                        added,
+                                        duplicates,
+                                        near_warnings,
+                                    ) = store.update(
+                                        lambda current: stage_ai_candidates(
+                                            current,
+                                            [corrected],
+                                        )
+                                    )
+                                    st.session_state["sayings_notice"] = (
+                                        f"Staged {added} corrected candidate; "
+                                        f"skipped {duplicates} exact duplicate."
+                                    )
+                                    if near_warnings:
+                                        st.session_state[
+                                            "sayings_notice"
+                                        ] += (
+                                            " The correction was flagged as "
+                                            "a possible near-duplicate."
+                                        )
+                                    st.rerun()
+                                except ValueError as exc:
+                                    st.error(
+                                        f"Could not stage correction: {exc}"
+                                    )
 
         candidates = state["ai_candidates"]
         st.subheader(f"Staged AI candidates ({len(candidates)})")
@@ -2334,6 +2658,13 @@ def render_sayings(
                         "latin_kind": item["latin_kind"],
                         "source_language": item["source_language"],
                         "source_text": item["source_text"],
+                        "review_status": item.get(
+                            "review_status", "unreviewed"
+                        ),
+                        "duplicate_warning": item.get(
+                            "duplicate_warning", ""
+                        ),
+                        "reviewed_at": item.get("reviewed_at", ""),
                         "note": item["note"],
                     }
                 )
@@ -2354,11 +2685,22 @@ def render_sayings(
                     "latin_kind",
                     "source_language",
                     "source_text",
+                    "review_status",
+                    "duplicate_warning",
+                    "reviewed_at",
                     "note",
                 ],
                 key=f"ai_candidate_editor_{state['revision']}",
             )
             left, right = st.columns(2)
+            allow_caution = left.checkbox(
+                "Allow adding selected caution candidates",
+                help=(
+                    "Caution candidates remain unapproved in the library and "
+                    "still require human verification before approval."
+                ),
+                key="allow_caution_candidates",
+            )
             if left.button("Add selected candidates as unapproved"):
                 selected_ids = set(
                     candidate_editor.loc[
@@ -2368,6 +2710,34 @@ def render_sayings(
                 if not selected_ids:
                     st.error("Select at least one candidate.")
                 else:
+                    selected_candidates = [
+                        item
+                        for item in candidates
+                        if item["id"] in selected_ids
+                    ]
+                    rejected = [
+                        item
+                        for item in selected_candidates
+                        if item.get("review_status") == "reject"
+                    ]
+                    cautions = [
+                        item
+                        for item in selected_candidates
+                        if item.get("review_status") == "caution"
+                    ]
+                    if rejected:
+                        st.error(
+                            "Rejected candidates cannot be added. Clear them "
+                            "or stage a reviewed correction."
+                        )
+                        st.stop()
+                    if cautions and not allow_caution:
+                        st.error(
+                            "At least one selected candidate has caution "
+                            "status. Enable the explicit caution override or "
+                            "deselect it."
+                        )
+                        st.stop()
 
                     def accept(current: dict[str, Any]) -> tuple[int, int]:
                         selected = [
@@ -2380,10 +2750,13 @@ def render_sayings(
                             selected,
                             "AI candidates added to the sayings library.",
                         )
+                        library_ids = {
+                            item["id"] for item in current["sayings"]
+                        }
                         current["ai_candidates"] = [
                             item
                             for item in current["ai_candidates"]
-                            if item["id"] not in selected_ids
+                            if item["id"] not in library_ids
                         ]
                         return result
 
