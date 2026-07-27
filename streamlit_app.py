@@ -1,4 +1,4 @@
-"""li_poster 1.3.0: a self-contained Streamlit LinkedIn scheduler."""
+"""li_poster 1.3.1: a self-contained Streamlit LinkedIn scheduler."""
 
 from __future__ import annotations
 
@@ -35,7 +35,7 @@ st.set_page_config(
 # ---------------------------------------------------------------------------
 
 APP_NAME = "li_poster"
-APP_VERSION = "1.3.0"
+APP_VERSION = "1.3.1"
 GITHUB_API = "https://api.github.com"
 LINKEDIN_AUTHORIZE_URL = "https://www.linkedin.com/oauth/v2/authorization"
 LINKEDIN_TOKEN_URL = "https://www.linkedin.com/oauth/v2/accessToken"
@@ -48,7 +48,17 @@ STATE_PATH = "runtime/state.json"
 MAX_EVENTS = 500
 MAX_HISTORY = 500
 MAX_AI_CANDIDATES = 100
-SCHEMA_VERSION = 4
+MAX_GENERATION_ATTEMPTS = 3
+MAX_METADATA_BACKFILL = 10
+SCHEMA_VERSION = 5
+SOURCE_MODE_REQUIRED = "One required source language"
+SOURCE_MODE_BALANCED = "Balanced coverage across preferred languages"
+SOURCE_MODE_PREFERENCES = "Preferred languages only"
+SOURCE_MODES = [
+    SOURCE_MODE_REQUIRED,
+    SOURCE_MODE_BALANCED,
+    SOURCE_MODE_PREFERENCES,
+]
 WEEKDAYS = [
     "Monday",
     "Tuesday",
@@ -624,21 +634,17 @@ RELIGIOUS_LANGUAGE_PATTERNS: tuple[tuple[str, str], ...] = (
 
 
 def religious_language_hits(record: dict[str, Any]) -> list[str]:
-    text = " ".join(
-        normalize_space(record.get(field)).casefold()
-        for field in (
-            "latin",
-            "translation",
-            "attribution",
-            "source_text",
-            "note",
-        )
-    )
     hits: list[str] = []
-    for pattern, label in RELIGIOUS_LANGUAGE_PATTERNS:
-        if re.search(pattern, text, flags=re.IGNORECASE):
-            hits.append(label)
-    return sorted(set(hits))
+    # Scan only material that can appear in the post or substantiate it.
+    # Internal notes may legitimately discuss why wording needs review.
+    for field in ("latin", "translation", "attribution", "source_text"):
+        text = normalize_space(record.get(field)).casefold()
+        for pattern, label in RELIGIOUS_LANGUAGE_PATTERNS:
+            for match in re.finditer(pattern, text, flags=re.IGNORECASE):
+                hits.append(
+                    f"{field}: “{match.group(0)}” ({label})"
+                )
+    return list(dict.fromkeys(hits))
 
 
 def near_duplicate_match(
@@ -744,6 +750,9 @@ def normalize_saying(
     normalized["duplicate_warning"] = normalize_space(
         record.get("duplicate_warning")
     )
+    normalized["policy_warning"] = normalize_space(
+        record.get("policy_warning")
+    )
     return normalized
 
 
@@ -790,6 +799,21 @@ def merge_curated_library(records: list[dict[str, Any]]) -> list[dict[str, Any]]
                 ]
             if not normalize_space(raw.get("note")) and seed.get("note"):
                 record["note"] = seed["note"]
+        policy_hits = religious_language_hits(record)
+        if policy_hits:
+            record["approved"] = False
+            record["verification_status"] = (
+                "blocked by secular wording policy"
+            )
+            policy_note = (
+                "Secular wording policy: "
+                + "; ".join(policy_hits)
+                + "."
+            )
+            if policy_note not in record["note"]:
+                record["note"] = normalize_space(
+                    f"{record['note']} {policy_note}"
+                )
         active.append(record)
     ids = {record["id"] for record in active}
     fingerprints = {saying_fingerprint(record) for record in active}
@@ -813,6 +837,14 @@ def normalize_ai_candidates(
             raw,
             default_origin="DeepSeek candidate",
         )
+        policy_hits = religious_language_hits(candidate)
+        if policy_hits:
+            candidate["policy_warning"] = (
+                "Excluded religious or theological wording detected: "
+                + "; ".join(policy_hits)
+                + "."
+            )
+            candidate["review_status"] = "reject"
         if not candidate["duplicate_warning"]:
             near_match = near_duplicate_match(
                 candidate,
@@ -1102,7 +1134,7 @@ def generate_deepseek_sayings(
     themes: str,
     required_source_language: str,
     source_preferences: str,
-    balanced_sources: bool,
+    source_mode: str,
     existing_sayings: list[dict[str, Any]],
 ) -> tuple[list[dict[str, Any]], list[str]]:
     system_prompt = """
@@ -1143,16 +1175,24 @@ Return this JSON shape:
 }
 """.strip()
     quantity = int(quantity)
+    if source_mode not in SOURCE_MODES:
+        raise DeepSeekError("Select a valid source-language mode.")
     preferred_languages = [
         canonical_language(item)
         for item in parse_list_terms(source_preferences)
     ]
     preferred_languages = list(dict.fromkeys(preferred_languages))
     required_language = canonical_language(required_source_language)
-    if balanced_sources and required_language:
-        balanced_sources = False
+    if source_mode == SOURCE_MODE_REQUIRED and not required_language:
+        raise DeepSeekError(
+            "Enter a required source language or select another source mode."
+        )
+    if source_mode == SOURCE_MODE_BALANCED and not preferred_languages:
+        raise DeepSeekError(
+            "Enter at least one preferred source language for balanced coverage."
+        )
     if (
-        balanced_sources
+        source_mode == SOURCE_MODE_BALANCED
         and preferred_languages
         and quantity < len(preferred_languages)
     ):
@@ -1160,154 +1200,238 @@ Return this JSON shape:
             "Balanced source coverage needs at least "
             f"{len(preferred_languages)} candidates for the "
             f"{len(preferred_languages)} listed source languages. Increase "
-            "the candidate count, reduce the source list, or turn balanced "
-            "coverage off."
+            "the candidate count, reduce the source list, or select a "
+            "different source-language mode."
         )
-    existing_compact = [
-        {
-            "latin": normalize_space(item.get("latin")),
-            "attribution": normalize_space(item.get("attribution")),
-        }
-        for item in existing_sayings
-    ]
     theme_instruction = (
         f"Every candidate must primarily address this required theme: "
         f"{normalize_space(required_theme)}. "
         if normalize_space(required_theme)
         else ""
     )
-    if required_language:
-        source_instruction = (
-            f"Every candidate must originate in {required_language}; do not "
-            "substitute another source language. "
-        )
-    elif balanced_sources and preferred_languages:
-        source_instruction = (
-            "Distribute candidates as evenly as possible across these source "
-            f"languages and include at least one from each: "
-            f"{', '.join(preferred_languages)}. "
-        )
-    else:
-        source_instruction = (
-            f"Preferred source languages: "
-            f"{normalize_space(source_preferences) or 'a varied secular selection'}. "
-        )
-    user_prompt = "".join(
-        [
-            f"Return exactly {quantity} distinct candidates in JSON. ",
-            theme_instruction,
-            "Optional supporting themes: ",
-            (
-                normalize_space(themes)
-                or "wisdom, time, learning, courage, friendship"
-            ),
-            ". ",
-            source_instruction,
-            "Keep each finished Latin/translation/attribution post concise. ",
-            "Set source_confidence to low whenever the exact wording, work, ",
-            "or section is uncertain. Do not present a Latin translation as ",
-            "an original quotation. Do not duplicate or closely overlap any ",
-            "entry in this existing library JSON: ",
-            json.dumps(existing_compact, ensure_ascii=False),
-        ]
-    )
-    parsed = call_deepseek_json(
-        api_key,
-        model,
-        system_prompt,
-        user_prompt,
-        max_tokens=max(3000, quantity * 700),
-    )
-    raw_candidates = parsed.get("candidates", [])
-    if not isinstance(raw_candidates, list):
-        raise DeepSeekError("DeepSeek did not return a candidate list.")
+    required_theme_key = latin_search_key(required_theme)
     candidates: list[dict[str, Any]] = []
     warnings: list[str] = []
-    for index, raw in enumerate(raw_candidates):
-        try:
-            if not isinstance(raw, dict):
-                raise ValueError("Candidate is not a JSON object.")
-            missing_metadata = [
-                field
-                for field in (
-                    "primary_theme",
-                    "source_period",
-                    "source_confidence",
-                )
-                if not normalize_space(raw.get(field))
-            ]
-            if missing_metadata:
-                raise ValueError(
-                    "Candidate is missing structured metadata: "
-                    + ", ".join(missing_metadata)
-                    + "."
-                )
-            candidates.append(
-                validate_ai_candidate(
-                    raw,
-                    origin=f"DeepSeek suggestion ({model})",
-                )
-            )
-        except ValueError as exc:
-            warnings.append(f"Candidate {index + 1} was skipped: {exc}")
-    if not candidates:
-        raise DeepSeekError(
-            "DeepSeek returned no usable secular candidates."
-        )
-    if len(candidates) != quantity:
-        rejection_detail = (
-            f" First rejection: {warnings[0]}"
-            if warnings
-            else ""
-        )
-        raise DeepSeekError(
-            f"DeepSeek returned {len(candidates)} usable candidate(s), not "
-            f"the requested {quantity}. No partial result was staged."
-            + rejection_detail
-        )
-    if required_language:
-        wrong_languages = [
-            item["source_language"]
-            for item in candidates
-            if canonical_language(item["source_language"]) != required_language
-        ]
-        if wrong_languages:
-            raise DeepSeekError(
-                f"DeepSeek did not consistently use the required "
-                f"{required_language} source language. No partial result was "
-                "staged."
-            )
-    if balanced_sources and preferred_languages:
-        returned_languages = {
+
+    def missing_balanced_languages() -> list[str]:
+        returned = {
             canonical_language(item["source_language"])
             for item in candidates
         }
-        missing_languages = [
+        return [
             language
             for language in preferred_languages
-            if language not in returned_languages
+            if language not in returned
         ]
+
+    def make_room_for_missing_languages() -> None:
+        if source_mode != SOURCE_MODE_BALANCED:
+            del candidates[quantity:]
+            return
+        missing = missing_balanced_languages()
+        target_size = max(0, quantity - len(missing))
+        while len(candidates) > target_size:
+            counts: dict[str, int] = {}
+            for item in candidates:
+                language = canonical_language(item["source_language"])
+                counts[language] = counts.get(language, 0) + 1
+            removable_index = next(
+                (
+                    index
+                    for index in range(len(candidates) - 1, -1, -1)
+                    if counts.get(
+                        canonical_language(
+                            candidates[index]["source_language"]
+                        ),
+                        0,
+                    )
+                    > 1
+                    or canonical_language(
+                        candidates[index]["source_language"]
+                    )
+                    not in preferred_languages
+                ),
+                None,
+            )
+            if removable_index is None:
+                break
+            candidates.pop(removable_index)
+
+    for attempt in range(1, MAX_GENERATION_ATTEMPTS + 1):
+        make_room_for_missing_languages()
+        remaining = quantity - len(candidates)
+        missing_languages = (
+            missing_balanced_languages()
+            if source_mode == SOURCE_MODE_BALANCED
+            else []
+        )
+        if remaining <= 0 and not missing_languages:
+            break
+        if source_mode == SOURCE_MODE_REQUIRED:
+            source_instruction = (
+                f"Every candidate must originate in {required_language}; do "
+                "not substitute another source language. "
+            )
+        elif source_mode == SOURCE_MODE_BALANCED:
+            target_languages = missing_languages or preferred_languages
+            source_instruction = (
+                "Use only these source languages in this response and include "
+                f"each at least once: {', '.join(target_languages)}. "
+            )
+        else:
+            source_instruction = (
+                "Treat these as preferences rather than guaranteed coverage: "
+                f"{normalize_space(source_preferences) or 'a varied secular selection'}. "
+            )
+        existing_compact = [
+            {
+                "latin": normalize_space(item.get("latin")),
+                "attribution": normalize_space(item.get("attribution")),
+            }
+            for item in existing_sayings + candidates
+        ]
+        user_prompt = "".join(
+            [
+                f"Return exactly {remaining} distinct candidates in JSON. ",
+                (
+                    f"This is replacement attempt {attempt}; replace any "
+                    "previously rejected or missing result. "
+                    if attempt > 1
+                    else ""
+                ),
+                theme_instruction,
+                "Optional supporting themes: ",
+                (
+                    normalize_space(themes)
+                    or "wisdom, time, learning, courage, friendship"
+                ),
+                ". ",
+                source_instruction,
+                "Keep each finished Latin/translation/attribution post concise. ",
+                "Set source_confidence to low whenever the exact wording, work, ",
+                "or section is uncertain. Do not present a Latin translation as ",
+                "an original quotation. Do not duplicate or closely overlap any ",
+                "entry in this existing library JSON: ",
+                json.dumps(existing_compact, ensure_ascii=False),
+            ]
+        )
+        parsed = call_deepseek_json(
+            api_key,
+            model,
+            system_prompt,
+            user_prompt,
+            max_tokens=max(2400, remaining * 700),
+        )
+        raw_candidates = parsed.get("candidates", [])
+        if not isinstance(raw_candidates, list):
+            warnings.append(
+                f"Attempt {attempt} did not return a candidate list."
+            )
+            continue
+        if len(raw_candidates) != remaining:
+            warnings.append(
+                f"Attempt {attempt} returned {len(raw_candidates)} raw "
+                f"candidate(s), not the requested {remaining}."
+            )
+        for index, raw in enumerate(raw_candidates):
+            try:
+                if not isinstance(raw, dict):
+                    raise ValueError("Candidate is not a JSON object.")
+                missing_metadata = [
+                    field
+                    for field in (
+                        "primary_theme",
+                        "source_period",
+                        "source_confidence",
+                    )
+                    if not normalize_space(raw.get(field))
+                ]
+                if missing_metadata:
+                    raise ValueError(
+                        "Candidate is missing structured metadata: "
+                        + ", ".join(missing_metadata)
+                        + "."
+                    )
+                candidate = validate_ai_candidate(
+                    raw,
+                    origin=f"DeepSeek suggestion ({model})",
+                )
+                candidate_language = canonical_language(
+                    candidate["source_language"]
+                )
+                if (
+                    source_mode == SOURCE_MODE_REQUIRED
+                    and candidate_language != required_language
+                ):
+                    raise ValueError(
+                        f"source_language was {candidate_language}, not the "
+                        f"required {required_language}."
+                    )
+                if (
+                    source_mode == SOURCE_MODE_BALANCED
+                    and candidate_language not in preferred_languages
+                ):
+                    raise ValueError(
+                        f"source_language {candidate_language} was outside "
+                        "the balanced source list."
+                    )
+                if (
+                    required_theme_key
+                    and required_theme_key
+                    not in latin_search_key(candidate["primary_theme"])
+                ):
+                    raise ValueError(
+                        f"primary_theme was "
+                        f"“{candidate['primary_theme']}”, not the required "
+                        f"“{normalize_space(required_theme)}”."
+                    )
+                near_match = near_duplicate_match(
+                    candidate,
+                    existing_sayings + candidates,
+                )
+                if near_match:
+                    existing, reason = near_match
+                    raise ValueError(
+                        f"possible duplicate of “{existing['latin']}”: "
+                        f"{reason}."
+                    )
+                candidates.append(candidate)
+            except ValueError as exc:
+                warnings.append(
+                    f"Attempt {attempt}, candidate {index + 1} was skipped: "
+                    f"{exc}"
+                )
+        make_room_for_missing_languages()
+        if (
+            len(candidates) >= quantity
+            and (
+                source_mode != SOURCE_MODE_BALANCED
+                or not missing_balanced_languages()
+            )
+        ):
+            break
+    if not candidates:
+        detail = f" First rejection: {warnings[0]}" if warnings else ""
+        raise DeepSeekError(
+            "DeepSeek returned no usable secular candidates after automatic "
+            f"replacement attempts.{detail}"
+        )
+    candidates = candidates[:quantity]
+    if len(candidates) < quantity:
+        warnings.append(
+            f"Only {len(candidates)} of {quantity} requested candidates "
+            "passed validation after automatic replacement attempts. The "
+            "valid partial result was staged."
+        )
+    if source_mode == SOURCE_MODE_BALANCED:
+        missing_languages = missing_balanced_languages()
         if missing_languages:
-            raise DeepSeekError(
-                "DeepSeek omitted required balanced source coverage for: "
+            warnings.append(
+                "Balanced coverage remains incomplete for: "
                 + ", ".join(missing_languages)
-                + ". No partial result was staged."
+                + "."
             )
-    required_theme_key = latin_search_key(required_theme)
-    if required_theme_key:
-        off_theme = [
-            item["primary_theme"]
-            for item in candidates
-            if required_theme_key
-            not in latin_search_key(item["primary_theme"])
-        ]
-        if off_theme:
-            raise DeepSeekError(
-                "DeepSeek did not label every result with the required "
-                f"primary theme “{normalize_space(required_theme)}”. No "
-                "partial result was staged."
-            )
-    return candidates, warnings
+    return candidates, list(dict.fromkeys(warnings))
 
 
 def translate_with_deepseek(
@@ -1437,6 +1561,112 @@ Return:
     ):
         result[field] = normalize_space(parsed.get(field))
     return result
+
+
+def backfill_candidate_metadata_with_deepseek(
+    api_key: str,
+    model: str,
+    candidates: list[dict[str, Any]],
+) -> tuple[dict[str, dict[str, str]], list[str]]:
+    pending = [
+        item
+        for item in candidates
+        if (
+            not normalize_space(item.get("primary_theme"))
+            or normalize_space(item.get("source_period")).casefold()
+            in {"", "unknown"}
+            or normalize_space(item.get("source_confidence")).casefold()
+            in {"", "unknown", "unverified"}
+        )
+    ][:MAX_METADATA_BACKFILL]
+    if not pending:
+        return {}, []
+    system_prompt = """
+You are a cautious classical-source metadata editor. Return JSON only. Fill
+metadata for the supplied candidates without changing, correcting, or
+rephrasing their Latin, translation, or attribution. Do not invent certainty.
+Use low source confidence when an attribution or exact textual source is
+uncertain. Source language means the language of the underlying source, not
+the Latin rendering. Source period should be a concise century or historical
+period.
+
+Return:
+{
+  "updates": [
+    {
+      "id": "exact supplied id",
+      "primary_theme": "one concise theme",
+      "source_language": "...",
+      "source_period": "...",
+      "source_confidence": "high OR medium OR low"
+    }
+  ]
+}
+""".strip()
+    supplied = [
+        {
+            "id": item["id"],
+            "latin": item["latin"],
+            "translation": item["translation"],
+            "attribution": item["attribution"],
+            "latin_kind": item["latin_kind"],
+            "source_language": item["source_language"],
+        }
+        for item in pending
+    ]
+    parsed = call_deepseek_json(
+        api_key,
+        model,
+        system_prompt,
+        "Fill only the missing or unverified metadata for these candidates: "
+        + json.dumps(supplied, ensure_ascii=False),
+        max_tokens=max(2400, len(pending) * 300),
+    )
+    raw_updates = parsed.get("updates")
+    if not isinstance(raw_updates, list):
+        raise DeepSeekError("DeepSeek did not return a metadata update list.")
+    allowed_ids = {item["id"] for item in pending}
+    updates: dict[str, dict[str, str]] = {}
+    warnings: list[str] = []
+    for index, raw in enumerate(raw_updates):
+        if not isinstance(raw, dict):
+            warnings.append(
+                f"Metadata update {index + 1} was not a JSON object."
+            )
+            continue
+        candidate_id = normalize_space(raw.get("id"))
+        confidence = normalize_space(
+            raw.get("source_confidence")
+        ).casefold()
+        fields = {
+            "primary_theme": normalize_space(raw.get("primary_theme")),
+            "source_language": canonical_language(
+                raw.get("source_language")
+            ),
+            "source_period": normalize_space(raw.get("source_period")),
+            "source_confidence": confidence,
+        }
+        if candidate_id not in allowed_ids:
+            warnings.append(
+                f"Metadata update {index + 1} had an unknown candidate id."
+            )
+            continue
+        if any(not value for value in fields.values()):
+            warnings.append(
+                f"Metadata update {index + 1} was incomplete."
+            )
+            continue
+        if confidence not in {"high", "medium", "low"}:
+            warnings.append(
+                f"Metadata update {index + 1} had invalid source confidence."
+            )
+            continue
+        updates[candidate_id] = fields
+    if not updates:
+        raise DeepSeekError(
+            "DeepSeek returned no usable metadata updates."
+        )
+    return updates, warnings
 
 
 # ---------------------------------------------------------------------------
@@ -2351,16 +2581,29 @@ def render_dashboard(
   repeats. Local near-duplicate checks can still flag a result after it returns.
 - **Required primary theme** makes every result focus on one theme. Optional
   supporting themes are preferences and do not guarantee coverage by themselves.
-- **Required source language** makes every result originate in that language.
-  Enter `Arabic` to request only Classical Arabic sources.
-- **Balanced source coverage** requires at least one candidate from each listed
-  language. The candidate count must therefore be at least the number of listed
-  languages. Classical Arabic sources may be medieval rather than ancient; the
-  app allows secular pre-modern Arabic intellectual sources through 1500 CE and
-  labels the period explicitly.
+- Select one explicit **source-language mode**. **One required source
+  language** guarantees a single origin language; enter `Arabic` to request
+  only Classical Arabic sources. **Balanced coverage** requires at least one
+  candidate from each preferred language. **Preferred languages only** does
+  not guarantee coverage.
+- Balanced mode requires at least as many candidates as listed languages.
+  Classical Arabic sources may be medieval rather than ancient; the app allows
+  secular pre-modern Arabic intellectual sources through 1500 CE and labels
+  the period explicitly.
 - DeepSeek structured requests disable model thinking to preserve the generated
   JSON allowance. A truncated, empty, or malformed response is retried once
   with a larger allowance before the app reports an error.
+- Candidate generation makes up to three generation attempts to replace
+  filtered, duplicate, off-theme, or wrong-language results. If the requested
+  total still cannot be reached, valid partial results are staged with a
+  visible warning.
+- The local secular-language filter checks Latin, translation, attribution, and
+  source text. It reports the exact field and matched wording. Internal notes
+  are not scanned because they may legitimately describe editorial concerns.
+- Older staged candidates are rescanned under the current policy. Conflicting
+  wording is marked `reject`. The optional metadata-maintenance action can fill
+  missing theme, source period, language, and confidence for up to ten legacy
+  candidates per DeepSeek request without changing their wording.
 - AI reviews are saved with each staged candidate. A `caution` result requires
   an explicit override before it can be added as unapproved; a `reject` result
   cannot be added. A proposed correction becomes a separate unreviewed
@@ -2400,9 +2643,12 @@ def render_dashboard(
   balance. **429:** wait and retry. A truncated, empty, or malformed result is
   retried once automatically; if the second attempt fails, request fewer
   candidates.
-- **A requested language is missing:** use **Required source language** to
-  guarantee one language, or enable balanced coverage and request at least as
-  many candidates as there are preferred languages.
+- **A requested language is missing:** select **One required source language**
+  to guarantee one language, or select **Balanced coverage** and request at
+  least as many candidates as there are preferred languages.
+- **Generation returns fewer candidates:** read the generation notes. The app
+  has already tried to replace rejected results and has staged any valid
+  partial result. Exact rejection fields and matched policy terms are shown.
 - **Posting result is uncertain:** check LinkedIn directly before choosing
   **Mark as posted** or **Mark as not posted**. Do not blindly retry an
   uncertain request.
@@ -2442,6 +2688,13 @@ def validate_library_records(
             errors.append(
                 f"Row {index + 1} is {length} characters; the maximum is "
                 f"{max_post_chars}."
+            )
+        policy_hits = religious_language_hits(record)
+        if policy_hits:
+            errors.append(
+                f"Row {index + 1} conflicts with the secular wording policy: "
+                + "; ".join(policy_hits)
+                + "."
             )
         fingerprint = saying_fingerprint(record)
         if fingerprint in seen:
@@ -2511,6 +2764,14 @@ def stage_ai_candidates(
             raw,
             default_origin="DeepSeek candidate",
         )
+        policy_hits = religious_language_hits(candidate)
+        if policy_hits:
+            candidate["policy_warning"] = (
+                "Excluded religious or theological wording detected: "
+                + "; ".join(policy_hits)
+                + "."
+            )
+            candidate["review_status"] = "reject"
         fingerprint = saying_fingerprint(candidate)
         if fingerprint in fingerprints:
             duplicates += 1
@@ -2561,6 +2822,9 @@ def render_sayings(
     notice = st.session_state.pop("sayings_notice", "")
     if notice:
         st.success(notice)
+    warning_notice = st.session_state.pop("sayings_warning", "")
+    if warning_notice:
+        st.warning(warning_notice)
 
     display_columns = ["id", *SAYING_FIELDS]
     editor = pd.DataFrame(state["sayings"])[display_columns]
@@ -2705,13 +2969,23 @@ def render_sayings(
                             "medicine"
                         ),
                     )
+                    source_mode = st.selectbox(
+                        "Source-language mode",
+                        options=SOURCE_MODES,
+                        index=1,
+                        help=(
+                            "Choose one required language, balanced coverage "
+                            "across the preferred list, or non-guaranteed "
+                            "language preferences."
+                        ),
+                    )
                     required_source = st.text_input(
                         "Required source language (optional)",
                         placeholder="For example: Arabic",
                         help=(
-                            "Use this to require every result to originate in "
-                            "one language. Enter Arabic to guarantee Arabic-"
-                            "source candidates."
+                            "Used only with “One required source language”. "
+                            "Enter Arabic to guarantee Arabic-source "
+                            "candidates."
                         ),
                     )
                     sources = st.text_input(
@@ -2719,14 +2993,9 @@ def render_sayings(
                         value=(
                             "Latin, Ancient Greek, Classical Chinese, Arabic"
                         ),
-                    )
-                    balanced_sources = st.checkbox(
-                        "Require balanced coverage of all preferred source languages",
-                        value=True,
                         help=(
-                            "The candidate count must be at least the number "
-                            "of listed languages. This setting is ignored "
-                            "when a required source language is supplied."
+                            "Used by balanced and preferences-only source "
+                            "modes."
                         ),
                     )
                     generate = st.form_submit_button(
@@ -2744,7 +3013,7 @@ def render_sayings(
                                 themes,
                                 required_source,
                                 sources,
-                                balanced_sources,
+                                source_mode,
                                 state["sayings"] + state["ai_candidates"],
                             )
                         added, duplicates, near_warnings = store.update(
@@ -2763,7 +3032,10 @@ def render_sayings(
                                 "duplicate(s)."
                             )
                         if warnings:
-                            message += f" {len(warnings)} malformed candidate(s) were rejected."
+                            st.session_state["sayings_warning"] = (
+                                "DeepSeek generation notes:\n\n- "
+                                + "\n- ".join(warnings)
+                            )
                         st.session_state["sayings_notice"] = message
                         st.rerun()
                     except DeepSeekError as exc:
@@ -2963,6 +3235,7 @@ def render_sayings(
                                     "reviewed_at": "",
                                     "review_model": "",
                                     "duplicate_warning": "",
+                                    "policy_warning": "",
                                     "secular": True,
                                 }
                                 try:
@@ -3015,6 +3288,9 @@ def render_sayings(
                         "duplicate_warning": item.get(
                             "duplicate_warning", ""
                         ),
+                        "policy_warning": item.get(
+                            "policy_warning", ""
+                        ),
                         "latin": item["latin"],
                         "translation": item["translation"],
                         "primary_theme": item.get("primary_theme", ""),
@@ -3051,11 +3327,119 @@ def render_sayings(
                     "source_text",
                     "review_status",
                     "duplicate_warning",
+                    "policy_warning",
                     "reviewed_at",
                     "note",
                 ],
                 key=f"ai_candidate_editor_{state['revision']}",
             )
+            pending_metadata_count = sum(
+                (
+                    not normalize_space(item.get("primary_theme"))
+                    or normalize_space(
+                        item.get("source_period")
+                    ).casefold()
+                    in {"", "unknown"}
+                    or normalize_space(
+                        item.get("source_confidence")
+                    ).casefold()
+                    in {"", "unknown", "unverified"}
+                )
+                for item in candidates
+            )
+            if pending_metadata_count:
+                with st.expander("Legacy candidate metadata maintenance"):
+                    st.write(
+                        f"{pending_metadata_count} staged candidate(s) have "
+                        "missing or unverified v1.3 metadata. One request "
+                        f"updates at most {MAX_METADATA_BACKFILL} candidates. "
+                        "Wording and attribution are not changed."
+                    )
+                    confirm_backfill = st.checkbox(
+                        "I understand this uses my DeepSeek API account.",
+                        key="confirm_metadata_backfill",
+                    )
+                    if st.button(
+                        "Backfill missing metadata",
+                        disabled=not confirm_backfill or not bool(api_key),
+                    ):
+                        try:
+                            with st.spinner(
+                                "DeepSeek is preparing metadata..."
+                            ):
+                                updates, metadata_warnings = (
+                                    backfill_candidate_metadata_with_deepseek(
+                                        api_key,
+                                        model,
+                                        candidates,
+                                    )
+                                )
+
+                            def persist_metadata(
+                                current: dict[str, Any],
+                            ) -> int:
+                                updated = 0
+                                for item in current["ai_candidates"]:
+                                    fields = updates.get(item["id"])
+                                    if not fields:
+                                        continue
+                                    if not normalize_space(
+                                        item.get("primary_theme")
+                                    ):
+                                        item["primary_theme"] = fields[
+                                            "primary_theme"
+                                        ]
+                                    if normalize_space(
+                                        item.get("source_language")
+                                    ).casefold() in {"", "unknown"}:
+                                        item["source_language"] = fields[
+                                            "source_language"
+                                        ]
+                                    if normalize_space(
+                                        item.get("source_period")
+                                    ).casefold() in {"", "unknown"}:
+                                        item["source_period"] = fields[
+                                            "source_period"
+                                        ]
+                                    if normalize_space(
+                                        item.get("source_confidence")
+                                    ).casefold() in {
+                                        "",
+                                        "unknown",
+                                        "unverified",
+                                    }:
+                                        item["source_confidence"] = fields[
+                                            "source_confidence"
+                                        ]
+                                    if (
+                                        fields["source_confidence"] == "low"
+                                        and item.get("review_status")
+                                        not in {"reject", "caution"}
+                                    ):
+                                        item["review_status"] = "caution"
+                                    updated += 1
+                                append_event(
+                                    current,
+                                    "info",
+                                    "Legacy AI candidate metadata backfilled.",
+                                    updated=updated,
+                                    model=model,
+                                )
+                                return updated
+
+                            updated = store.update(persist_metadata)
+                            st.session_state["sayings_notice"] = (
+                                f"Backfilled metadata for {updated} staged "
+                                "candidate(s)."
+                            )
+                            if metadata_warnings:
+                                st.session_state["sayings_warning"] = (
+                                    "Metadata backfill notes:\n\n- "
+                                    + "\n- ".join(metadata_warnings)
+                                )
+                            st.rerun()
+                        except DeepSeekError as exc:
+                            st.error(str(exc))
             left, right = st.columns(2)
             allow_caution = left.checkbox(
                 "Allow adding selected caution candidates",
