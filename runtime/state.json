@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "revision": 8,
+  "revision": 9,
   "settings": {
     "automation_enabled": false,
     "dry_run": true,
@@ -900,6 +900,15 @@
         "added": 5,
         "duplicates_skipped": 0
       }
+    },
+    {
+      "at": "2026-07-27T16:36:29.847995+00:00",
+      "level": "info",
+      "message": "DeepSeek candidates staged for human review.",
+      "details": {
+        "added": 2,
+        "duplicates_skipped": 0
+      }
     }
   ],
   "ai_candidates": [
@@ -967,6 +976,32 @@
       "origin": "DeepSeek suggestion (deepseek-v4-flash)",
       "verification_status": "AI candidate; human verification required",
       "note": "exact wording debatable"
+    },
+    {
+      "id": "ai-63124263995b52ae",
+      "approved": false,
+      "latin": "Nullam rem e nihilo gigni divinitus umquam",
+      "translation": "Nothing is ever produced from nothing by divine power.",
+      "attribution": "Lucretius, De Rerum Natura 1.150",
+      "latin_kind": "original Latin",
+      "source_language": "Latin",
+      "source_text": "Nullam rem e nihilo gigni divinitus umquam",
+      "origin": "DeepSeek suggestion (deepseek-v4-flash)",
+      "verification_status": "AI candidate; human verification required",
+      "note": ""
+    },
+    {
+      "id": "ai-f5782d7faff7cd7d",
+      "approved": false,
+      "latin": "Omnia mutantur, nihil interit",
+      "translation": "Everything changes, nothing perishes.",
+      "attribution": "Ovid, Metamorphoses 15.165",
+      "latin_kind": "original Latin",
+      "source_language": "Latin",
+      "source_text": "Omnia mutantur, nihil interit",
+      "origin": "DeepSeek suggestion (deepseek-v4-flash)",
+      "verification_status": "AI candidate; human verification required",
+      "note": ""
     }
   ]
 }
