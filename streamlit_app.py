@@ -1,4 +1,4 @@
-"""li_poster 1.2.0: a self-contained Streamlit LinkedIn scheduler."""
+"""li_poster 1.3.0: a self-contained Streamlit LinkedIn scheduler."""
 
 from __future__ import annotations
 
@@ -35,7 +35,7 @@ st.set_page_config(
 # ---------------------------------------------------------------------------
 
 APP_NAME = "li_poster"
-APP_VERSION = "1.2.0"
+APP_VERSION = "1.3.0"
 GITHUB_API = "https://api.github.com"
 LINKEDIN_AUTHORIZE_URL = "https://www.linkedin.com/oauth/v2/authorization"
 LINKEDIN_TOKEN_URL = "https://www.linkedin.com/oauth/v2/accessToken"
@@ -48,7 +48,7 @@ STATE_PATH = "runtime/state.json"
 MAX_EVENTS = 500
 MAX_HISTORY = 500
 MAX_AI_CANDIDATES = 100
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 WEEKDAYS = [
     "Monday",
     "Tuesday",
@@ -66,7 +66,10 @@ SAYING_FIELDS = [
     "translation",
     "attribution",
     "latin_kind",
+    "primary_theme",
     "source_language",
+    "source_period",
+    "source_confidence",
     "source_text",
     "origin",
     "verification_status",
@@ -83,6 +86,9 @@ def seed_saying(
     source_language: str = "Latin",
     source_text: str = "",
     note: str = "",
+    primary_theme: str = "",
+    source_period: str = "antiquity",
+    source_confidence: str = "curated; verify edition",
 ) -> dict[str, Any]:
     return {
         "id": saying_id,
@@ -91,7 +97,10 @@ def seed_saying(
         "translation": translation,
         "attribution": attribution,
         "latin_kind": latin_kind,
+        "primary_theme": primary_theme,
         "source_language": source_language,
+        "source_period": source_period,
+        "source_confidence": source_confidence,
         "source_text": source_text,
         "origin": "bundled curated library",
         "verification_status": "review source before approval",
@@ -573,6 +582,65 @@ def attribution_author(value: Any) -> str:
     return re.split(r"[,;]", attribution, maxsplit=1)[0].strip()
 
 
+def parse_list_terms(value: Any) -> list[str]:
+    text = normalize_space(value)
+    if not text:
+        return []
+    text = re.sub(r"\s*,?\s+\band\b\s+", ",", text, flags=re.IGNORECASE)
+    terms: list[str] = []
+    seen: set[str] = set()
+    for raw in re.split(r"[,;\n]+", text):
+        term = normalize_space(raw)
+        key = term.casefold()
+        if term and key not in seen:
+            terms.append(term)
+            seen.add(key)
+    return terms
+
+
+def canonical_language(value: Any) -> str:
+    language = latin_search_key(value)
+    aliases = {
+        "arabic": "Arabic",
+        "chinese": "Classical Chinese",
+        "greek": "Ancient Greek",
+        "latin": "Latin",
+        "sanskrit": "Sanskrit",
+        "persian": "Persian",
+        "hebrew": "Hebrew",
+    }
+    for token, label in aliases.items():
+        if token in language.split():
+            return label
+    return normalize_space(value)
+
+
+RELIGIOUS_LANGUAGE_PATTERNS: tuple[tuple[str, str], ...] = (
+    (r"\b(god|gods|goddess|deity|divine|prayer|scripture|theology)\b", "English religious language"),
+    (r"\b(religion|religious|sacred|holy|worship|salvation|prophet)\b", "English religious language"),
+    (r"\b(deus|deum|dei|deo|divin(?:us|um|a|i)|oratio|theologia)\b", "Latin religious language"),
+    (r"\b(sacer|sacra|sacrum|sanctus|sancta|sanctum)\b", "Latin religious language"),
+)
+
+
+def religious_language_hits(record: dict[str, Any]) -> list[str]:
+    text = " ".join(
+        normalize_space(record.get(field)).casefold()
+        for field in (
+            "latin",
+            "translation",
+            "attribution",
+            "source_text",
+            "note",
+        )
+    )
+    hits: list[str] = []
+    for pattern, label in RELIGIOUS_LANGUAGE_PATTERNS:
+        if re.search(pattern, text, flags=re.IGNORECASE):
+            hits.append(label)
+    return sorted(set(hits))
+
+
 def near_duplicate_match(
     candidate: dict[str, Any],
     existing_records: list[dict[str, Any]],
@@ -646,8 +714,15 @@ def normalize_saying(
         "attribution": normalize_space(record.get("attribution")),
         "latin_kind": normalize_space(record.get("latin_kind"))
         or "modern Latin rendering",
+        "primary_theme": normalize_space(record.get("primary_theme")),
         "source_language": normalize_space(record.get("source_language"))
         or "unknown",
+        "source_period": normalize_space(record.get("source_period"))
+        or "unknown",
+        "source_confidence": normalize_space(
+            record.get("source_confidence")
+        ).casefold()
+        or "unverified",
         "source_text": normalize_space(record.get("source_text")),
         "origin": normalize_space(record.get("origin")) or default_origin,
         "verification_status": normalize_space(
@@ -681,11 +756,24 @@ def merge_curated_library(records: list[dict[str, Any]]) -> list[dict[str, Any]]
         record = normalize_saying(raw)
         seed = seed_by_id.get(record["id"])
         if seed:
+            if not normalize_space(raw.get("primary_theme")):
+                record["primary_theme"] = seed["primary_theme"]
             if normalize_space(raw.get("source_language")).casefold() in {
                 "",
                 "unknown",
             }:
                 record["source_language"] = seed["source_language"]
+            if normalize_space(raw.get("source_period")).casefold() in {
+                "",
+                "unknown",
+            }:
+                record["source_period"] = seed["source_period"]
+            if normalize_space(raw.get("source_confidence")).casefold() in {
+                "",
+                "unknown",
+                "unverified",
+            }:
+                record["source_confidence"] = seed["source_confidence"]
             if not normalize_space(raw.get("source_text")):
                 record["source_text"] = seed["source_text"]
             if normalize_space(raw.get("origin")).casefold() in {
@@ -732,6 +820,8 @@ def normalize_ai_candidates(
             )
             if near_match:
                 existing, reason = near_match
+                if reason == "same normalized Latin text":
+                    continue
                 candidate["duplicate_warning"] = (
                     f"Possible duplicate of “{existing['latin']}” "
                     f"({existing['attribution']}): {reason}."
@@ -874,59 +964,77 @@ def call_deepseek_json(
         raise DeepSeekError(
             "Add DEEPSEEK_API_KEY to Streamlit Secrets before using AI tools."
         )
-    payload = {
-        "model": model or DEFAULT_DEEPSEEK_MODEL,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ],
-        "response_format": {"type": "json_object"},
-        "temperature": 0.2,
-        "max_tokens": int(max_tokens),
-        "stream": False,
-    }
-    try:
-        response = requests.post(
-            DEEPSEEK_API_URL,
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-            },
-            json=payload,
-            timeout=75,
-        )
-    except requests.Timeout as exc:
-        raise DeepSeekError(
-            "DeepSeek timed out. No candidates were saved; try a smaller request."
-        ) from exc
-    except requests.RequestException as exc:
-        raise DeepSeekError(f"DeepSeek request failed: {exc}") from exc
-    if response.status_code != 200:
-        messages = {
-            401: "DeepSeek rejected the API key.",
-            402: "The DeepSeek account has insufficient balance.",
-            429: "DeepSeek is temporarily rate-limiting this account.",
+    token_budgets = [
+        int(max_tokens),
+        min(max(int(max_tokens) * 2, int(max_tokens) + 1200), 8000),
+    ]
+    last_retryable_error = ""
+    for attempt, token_budget in enumerate(token_budgets, start=1):
+        payload = {
+            "model": model or DEFAULT_DEEPSEEK_MODEL,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            "response_format": {"type": "json_object"},
+            "thinking": {"type": "disabled"},
+            "temperature": 0.2,
+            "max_tokens": token_budget,
+            "stream": False,
         }
-        detail = messages.get(
-            response.status_code,
-            f"DeepSeek returned HTTP {response.status_code}.",
-        )
-        raise DeepSeekError(detail)
-    try:
-        body = response.json()
-        choice = body["choices"][0]
-        if choice.get("finish_reason") == "length":
-            raise DeepSeekError(
-                "DeepSeek reached its output limit. Request fewer candidates."
+        try:
+            response = requests.post(
+                DEEPSEEK_API_URL,
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json=payload,
+                timeout=90,
             )
-        content = choice["message"]["content"]
-    except (KeyError, IndexError, TypeError, ValueError) as exc:
-        raise DeepSeekError("DeepSeek returned an incomplete response.") from exc
-    if not str(content or "").strip():
-        raise DeepSeekError(
-            "DeepSeek returned an empty response. Please try once more."
-        )
-    return parse_json_object(str(content))
+        except requests.Timeout as exc:
+            raise DeepSeekError(
+                "DeepSeek timed out. No candidates were saved; try a smaller request."
+            ) from exc
+        except requests.RequestException as exc:
+            raise DeepSeekError(f"DeepSeek request failed: {exc}") from exc
+        if response.status_code != 200:
+            messages = {
+                401: "DeepSeek rejected the API key.",
+                402: "The DeepSeek account has insufficient balance.",
+                429: "DeepSeek is temporarily rate-limiting this account.",
+            }
+            detail = messages.get(
+                response.status_code,
+                f"DeepSeek returned HTTP {response.status_code}.",
+            )
+            raise DeepSeekError(detail)
+        try:
+            body = response.json()
+            choice = body["choices"][0]
+            finish_reason = normalize_space(choice.get("finish_reason"))
+            content = choice["message"]["content"]
+        except (KeyError, IndexError, TypeError, ValueError) as exc:
+            raise DeepSeekError(
+                "DeepSeek returned an incomplete response."
+            ) from exc
+        if finish_reason == "length":
+            last_retryable_error = (
+                "DeepSeek reached its generated-output limit."
+            )
+        elif not str(content or "").strip():
+            last_retryable_error = "DeepSeek returned an empty response."
+        else:
+            try:
+                return parse_json_object(str(content))
+            except DeepSeekError as exc:
+                last_retryable_error = str(exc)
+        if attempt == 1:
+            continue
+    raise DeepSeekError(
+        f"{last_retryable_error} The app retried once with a larger output "
+        "allowance and saved nothing. Try fewer candidates."
+    )
 
 
 def validate_ai_candidate(
@@ -948,13 +1056,41 @@ def validate_ai_candidate(
     )
     missing = [
         field
-        for field in ("latin", "translation", "attribution", "latin_kind")
+        for field in (
+            "latin",
+            "translation",
+            "attribution",
+            "latin_kind",
+            "source_language",
+        )
         if not candidate[field]
     ]
     if missing:
         raise ValueError(f"Candidate is missing: {', '.join(missing)}.")
     if len(format_post(candidate)) > 3000:
         raise ValueError("Candidate exceeds LinkedIn's supported text length.")
+    confidence = candidate["source_confidence"]
+    if confidence not in {"high", "medium", "low", "unverified"}:
+        raise ValueError(
+            "Candidate has an invalid source-confidence classification."
+        )
+    religious_hits = religious_language_hits(candidate)
+    if religious_hits:
+        raise ValueError(
+            "Candidate contains excluded religious or theological language "
+            f"({', '.join(religious_hits)})."
+        )
+    source_language = canonical_language(candidate["source_language"])
+    kind_key = latin_search_key(candidate["latin_kind"])
+    if source_language != "Latin" and "rendering" not in kind_key.split():
+        raise ValueError(
+            "A non-Latin source must be labelled as a modern Latin rendering."
+        )
+    if confidence == "low" and candidate["review_status"] != "reject":
+        candidate["review_status"] = "caution"
+        candidate["note"] = normalize_space(
+            f"{candidate['note']} Low source confidence; verify before use."
+        )
     return candidate
 
 
@@ -962,22 +1098,30 @@ def generate_deepseek_sayings(
     api_key: str,
     model: str,
     quantity: int,
+    required_theme: str,
     themes: str,
+    required_source_language: str,
     source_preferences: str,
+    balanced_sources: bool,
     existing_sayings: list[dict[str, Any]],
 ) -> tuple[list[dict[str, Any]], list[str]]:
     system_prompt = """
 You are a cautious classical-language editorial assistant. Return JSON only.
-Propose concise, secular sayings from antiquity (normally before 500 CE) for
-human review. Exclude scripture, prayers, theology, devotional teaching,
-denominational material, and quotations whose attribution you cannot identify.
-Never invent an author, work, section, source text, or claim of original Latin.
-For a Latin author, quote the original Latin. For a source in another language,
-create a concise modern Latin rendering and label it honestly. The English
-translation must match the Latin. A candidate may be plausible yet must still
-be treated as unverified. The user will supply an existing-library list. Do not
-return the same saying, a shortened excerpt of it, a reordered version of it,
-or a close paraphrase attributed to the same source.
+Propose concise, secular sayings from ancient or pre-modern sources for human
+review. Latin and Greek material will usually be from antiquity. When Classical
+Arabic is requested, material may come from the medieval Arabic intellectual
+tradition through 1500 CE, especially mathematics, medicine, optics, natural
+philosophy, ethics, and learning. Exclude scripture, prayers, theology,
+devotional teaching, denominational material, and wording that invokes gods,
+deities, divine power, worship, prophecy, sacredness, or salvation, even in a
+secular criticism. Never invent an author, work, section, original-language
+text, or claim of original Latin. For a Latin author, quote the original Latin.
+For a source in another language, create a concise modern Latin rendering and
+label it honestly. The English translation must match the Latin. A candidate
+may be plausible yet must still be treated as unverified. The user will supply
+an existing-library list. Do not return the same saying, a shortened excerpt of
+it, a reordered version of it, or a close paraphrase attributed to the same
+source.
 
 Return this JSON shape:
 {
@@ -987,7 +1131,10 @@ Return this JSON shape:
       "translation": "...",
       "attribution": "author, work and section where known",
       "latin_kind": "original Latin OR modern Latin rendering from <language>",
+      "primary_theme": "one concise theme",
       "source_language": "...",
+      "source_period": "century or historical period",
+      "source_confidence": "high OR medium OR low",
       "source_text": "original-language text if reliably known, otherwise blank",
       "note": "specific verification caveat or blank",
       "secular": true
@@ -995,6 +1142,27 @@ Return this JSON shape:
   ]
 }
 """.strip()
+    quantity = int(quantity)
+    preferred_languages = [
+        canonical_language(item)
+        for item in parse_list_terms(source_preferences)
+    ]
+    preferred_languages = list(dict.fromkeys(preferred_languages))
+    required_language = canonical_language(required_source_language)
+    if balanced_sources and required_language:
+        balanced_sources = False
+    if (
+        balanced_sources
+        and preferred_languages
+        and quantity < len(preferred_languages)
+    ):
+        raise DeepSeekError(
+            "Balanced source coverage needs at least "
+            f"{len(preferred_languages)} candidates for the "
+            f"{len(preferred_languages)} listed source languages. Increase "
+            "the candidate count, reduce the source list, or turn balanced "
+            "coverage off."
+        )
     existing_compact = [
         {
             "latin": normalize_space(item.get("latin")),
@@ -1002,21 +1170,53 @@ Return this JSON shape:
         }
         for item in existing_sayings
     ]
-    user_prompt = (
-        f"Return exactly {int(quantity)} distinct candidates in JSON. "
-        f"Preferred themes: {normalize_space(themes) or 'wisdom, time, learning, courage, friendship'}. "
-        f"Source preferences: {normalize_space(source_preferences) or 'a varied secular selection'}. "
-        "Keep each finished Latin/translation/attribution post concise. "
-        "Do not duplicate or closely overlap any entry in this existing "
-        "library JSON: "
-        + json.dumps(existing_compact, ensure_ascii=False)
+    theme_instruction = (
+        f"Every candidate must primarily address this required theme: "
+        f"{normalize_space(required_theme)}. "
+        if normalize_space(required_theme)
+        else ""
+    )
+    if required_language:
+        source_instruction = (
+            f"Every candidate must originate in {required_language}; do not "
+            "substitute another source language. "
+        )
+    elif balanced_sources and preferred_languages:
+        source_instruction = (
+            "Distribute candidates as evenly as possible across these source "
+            f"languages and include at least one from each: "
+            f"{', '.join(preferred_languages)}. "
+        )
+    else:
+        source_instruction = (
+            f"Preferred source languages: "
+            f"{normalize_space(source_preferences) or 'a varied secular selection'}. "
+        )
+    user_prompt = "".join(
+        [
+            f"Return exactly {quantity} distinct candidates in JSON. ",
+            theme_instruction,
+            "Optional supporting themes: ",
+            (
+                normalize_space(themes)
+                or "wisdom, time, learning, courage, friendship"
+            ),
+            ". ",
+            source_instruction,
+            "Keep each finished Latin/translation/attribution post concise. ",
+            "Set source_confidence to low whenever the exact wording, work, ",
+            "or section is uncertain. Do not present a Latin translation as ",
+            "an original quotation. Do not duplicate or closely overlap any ",
+            "entry in this existing library JSON: ",
+            json.dumps(existing_compact, ensure_ascii=False),
+        ]
     )
     parsed = call_deepseek_json(
         api_key,
         model,
         system_prompt,
         user_prompt,
-        max_tokens=max(1800, int(quantity) * 450),
+        max_tokens=max(3000, quantity * 700),
     )
     raw_candidates = parsed.get("candidates", [])
     if not isinstance(raw_candidates, list):
@@ -1027,6 +1227,21 @@ Return this JSON shape:
         try:
             if not isinstance(raw, dict):
                 raise ValueError("Candidate is not a JSON object.")
+            missing_metadata = [
+                field
+                for field in (
+                    "primary_theme",
+                    "source_period",
+                    "source_confidence",
+                )
+                if not normalize_space(raw.get(field))
+            ]
+            if missing_metadata:
+                raise ValueError(
+                    "Candidate is missing structured metadata: "
+                    + ", ".join(missing_metadata)
+                    + "."
+                )
             candidates.append(
                 validate_ai_candidate(
                     raw,
@@ -1039,6 +1254,59 @@ Return this JSON shape:
         raise DeepSeekError(
             "DeepSeek returned no usable secular candidates."
         )
+    if len(candidates) != quantity:
+        rejection_detail = (
+            f" First rejection: {warnings[0]}"
+            if warnings
+            else ""
+        )
+        raise DeepSeekError(
+            f"DeepSeek returned {len(candidates)} usable candidate(s), not "
+            f"the requested {quantity}. No partial result was staged."
+            + rejection_detail
+        )
+    if required_language:
+        wrong_languages = [
+            item["source_language"]
+            for item in candidates
+            if canonical_language(item["source_language"]) != required_language
+        ]
+        if wrong_languages:
+            raise DeepSeekError(
+                f"DeepSeek did not consistently use the required "
+                f"{required_language} source language. No partial result was "
+                "staged."
+            )
+    if balanced_sources and preferred_languages:
+        returned_languages = {
+            canonical_language(item["source_language"])
+            for item in candidates
+        }
+        missing_languages = [
+            language
+            for language in preferred_languages
+            if language not in returned_languages
+        ]
+        if missing_languages:
+            raise DeepSeekError(
+                "DeepSeek omitted required balanced source coverage for: "
+                + ", ".join(missing_languages)
+                + ". No partial result was staged."
+            )
+    required_theme_key = latin_search_key(required_theme)
+    if required_theme_key:
+        off_theme = [
+            item["primary_theme"]
+            for item in candidates
+            if required_theme_key
+            not in latin_search_key(item["primary_theme"])
+        ]
+        if off_theme:
+            raise DeepSeekError(
+                "DeepSeek did not label every result with the required "
+                f"primary theme “{normalize_space(required_theme)}”. No "
+                "partial result was staged."
+            )
     return candidates, warnings
 
 
@@ -1063,7 +1331,10 @@ Return this JSON shape:
     "translation": "...",
     "attribution": "...",
     "latin_kind": "modern Latin rendering from <language>",
+    "primary_theme": "one concise theme",
     "source_language": "...",
+    "source_period": "period supplied or inferred cautiously",
+    "source_confidence": "medium",
     "source_text": "...",
     "note": "AI translation; verify the Latin before approval.",
     "secular": true
@@ -1118,12 +1389,16 @@ Return:
   "latin_assessment": "...",
   "translation_assessment": "...",
   "attribution_assessment": "...",
+  "source_assessment": "...",
   "secularity_assessment": "...",
   "recommended_action": "...",
   "corrected_latin": "corrected wording when appropriate, otherwise blank",
   "corrected_translation": "matching translation or blank",
   "corrected_attribution": "corrected attribution or blank",
   "corrected_latin_kind": "corrected classification or blank",
+  "corrected_source_language": "corrected source language or blank",
+  "corrected_source_period": "corrected source period or blank",
+  "corrected_source_confidence": "high, medium, low, or blank",
   "correction_reason": "why the correction is suggested or blank"
 }
 """.strip()
@@ -1140,6 +1415,7 @@ Return:
         "latin_assessment",
         "translation_assessment",
         "attribution_assessment",
+        "source_assessment",
         "secularity_assessment",
         "recommended_action",
     ]
@@ -1154,6 +1430,9 @@ Return:
         "corrected_translation",
         "corrected_attribution",
         "corrected_latin_kind",
+        "corrected_source_language",
+        "corrected_source_period",
+        "corrected_source_confidence",
         "correction_reason",
     ):
         result[field] = normalize_space(parsed.get(field))
@@ -2070,6 +2349,18 @@ def render_dashboard(
   runtime state.
 - Generation requests include a compact copy of the existing library to reduce
   repeats. Local near-duplicate checks can still flag a result after it returns.
+- **Required primary theme** makes every result focus on one theme. Optional
+  supporting themes are preferences and do not guarantee coverage by themselves.
+- **Required source language** makes every result originate in that language.
+  Enter `Arabic` to request only Classical Arabic sources.
+- **Balanced source coverage** requires at least one candidate from each listed
+  language. The candidate count must therefore be at least the number of listed
+  languages. Classical Arabic sources may be medieval rather than ancient; the
+  app allows secular pre-modern Arabic intellectual sources through 1500 CE and
+  labels the period explicitly.
+- DeepSeek structured requests disable model thinking to preserve the generated
+  JSON allowance. A truncated, empty, or malformed response is retried once
+  with a larger allowance before the app reports an error.
 - AI reviews are saved with each staged candidate. A `caution` result requires
   an explicit override before it can be added as unapproved; a `reject` result
   cannot be added. A proposed correction becomes a separate unreviewed
@@ -2106,8 +2397,12 @@ def render_dashboard(
   `FERNET_KEY`. If it was intentionally replaced, reconnect LinkedIn to store a
   token encrypted with the new key.
 - **DeepSeek 401:** replace an invalid API key. **402:** check the DeepSeek
-  balance. **429:** wait and retry. For a timeout or truncated result, request
-  fewer candidates.
+  balance. **429:** wait and retry. A truncated, empty, or malformed result is
+  retried once automatically; if the second attempt fails, request fewer
+  candidates.
+- **A requested language is missing:** use **Required source language** to
+  guarantee one language, or enable balanced coverage and request at least as
+  many candidates as there are preferred languages.
 - **Posting result is uncertain:** check LinkedIn directly before choosing
   **Mark as posted** or **Mark as not posted**. Do not blindly retry an
   uncertain request.
@@ -2226,6 +2521,9 @@ def stage_ai_candidates(
         )
         if near_match:
             existing, reason = near_match
+            if reason == "same normalized Latin text":
+                duplicates += 1
+                continue
             candidate["duplicate_warning"] = (
                 f"Possible duplicate of “{existing['latin']}” "
                 f"({existing['attribution']}): {reason}."
@@ -2390,15 +2688,46 @@ def render_sayings(
                         "Number of candidates",
                         min_value=1,
                         max_value=10,
-                        value=5,
+                        value=4,
+                    )
+                    required_theme = st.text_input(
+                        "Required primary theme (optional)",
+                        placeholder="For example: science",
+                        help=(
+                            "When supplied, every returned candidate must be "
+                            "labelled with this primary theme."
+                        ),
                     )
                     themes = st.text_input(
-                        "Themes",
-                        value="time, learning, courage, friendship, self-knowledge",
+                        "Optional supporting themes",
+                        value=(
+                            "science, observation, nature, mathematics, "
+                            "medicine"
+                        ),
+                    )
+                    required_source = st.text_input(
+                        "Required source language (optional)",
+                        placeholder="For example: Arabic",
+                        help=(
+                            "Use this to require every result to originate in "
+                            "one language. Enter Arabic to guarantee Arabic-"
+                            "source candidates."
+                        ),
                     )
                     sources = st.text_input(
-                        "Source preferences",
-                        value="Latin, Ancient Greek, and Classical Chinese",
+                        "Preferred source languages",
+                        value=(
+                            "Latin, Ancient Greek, Classical Chinese, Arabic"
+                        ),
+                    )
+                    balanced_sources = st.checkbox(
+                        "Require balanced coverage of all preferred source languages",
+                        value=True,
+                        help=(
+                            "The candidate count must be at least the number "
+                            "of listed languages. This setting is ignored "
+                            "when a required source language is supplied."
+                        ),
                     )
                     generate = st.form_submit_button(
                         "Ask DeepSeek for candidates",
@@ -2411,8 +2740,11 @@ def render_sayings(
                                 api_key,
                                 model,
                                 int(quantity),
+                                required_theme,
                                 themes,
+                                required_source,
                                 sources,
+                                balanced_sources,
                                 state["sayings"] + state["ai_candidates"],
                             )
                         added, duplicates, near_warnings = store.update(
@@ -2593,6 +2925,28 @@ def render_sayings(
                                         review.get("corrected_latin_kind")
                                     )
                                     or selected["latin_kind"],
+                                    "source_language": normalize_space(
+                                        review.get(
+                                            "corrected_source_language"
+                                        )
+                                    )
+                                    or selected["source_language"],
+                                    "source_period": normalize_space(
+                                        review.get(
+                                            "corrected_source_period"
+                                        )
+                                    )
+                                    or selected.get(
+                                        "source_period", "unknown"
+                                    ),
+                                    "source_confidence": normalize_space(
+                                        review.get(
+                                            "corrected_source_confidence"
+                                        )
+                                    )
+                                    or selected.get(
+                                        "source_confidence", "unverified"
+                                    ),
                                     "origin": (
                                         f"DeepSeek reviewed correction ({model})"
                                     ),
@@ -2652,18 +3006,25 @@ def render_sayings(
                     {
                         "add": False,
                         "id": item["id"],
-                        "latin": item["latin"],
-                        "translation": item["translation"],
-                        "attribution": item["attribution"],
-                        "latin_kind": item["latin_kind"],
-                        "source_language": item["source_language"],
-                        "source_text": item["source_text"],
                         "review_status": item.get(
                             "review_status", "unreviewed"
+                        ),
+                        "source_confidence": item.get(
+                            "source_confidence", "unverified"
                         ),
                         "duplicate_warning": item.get(
                             "duplicate_warning", ""
                         ),
+                        "latin": item["latin"],
+                        "translation": item["translation"],
+                        "primary_theme": item.get("primary_theme", ""),
+                        "source_language": item["source_language"],
+                        "source_period": item.get(
+                            "source_period", "unknown"
+                        ),
+                        "attribution": item["attribution"],
+                        "latin_kind": item["latin_kind"],
+                        "source_text": item["source_text"],
                         "reviewed_at": item.get("reviewed_at", ""),
                         "note": item["note"],
                     }
@@ -2681,9 +3042,12 @@ def render_sayings(
                 disabled=[
                     "latin",
                     "translation",
+                    "primary_theme",
+                    "source_confidence",
                     "attribution",
                     "latin_kind",
                     "source_language",
+                    "source_period",
                     "source_text",
                     "review_status",
                     "duplicate_warning",
