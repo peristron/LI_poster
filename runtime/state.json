@@ -1,8 +1,8 @@
 {
   "schema_version": 4,
-  "revision": 29,
+  "revision": 30,
   "settings": {
-    "automation_enabled": false,
+    "automation_enabled": true,
     "dry_run": false,
     "posts_per_week_min": 1,
     "posts_per_week_max": 1,
@@ -1617,6 +1617,11 @@
       "at": "2026-07-27T22:17:07.740170+00:00",
       "level": "info",
       "message": "Schedule settings updated."
+    },
+    {
+      "at": "2026-07-27T22:17:37.659100+00:00",
+      "level": "info",
+      "message": "Automation enabled."
     }
   ],
   "ai_candidates": [
