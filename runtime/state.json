@@ -1,8 +1,8 @@
 {
   "schema_version": 4,
-  "revision": 24,
+  "revision": 25,
   "settings": {
-    "automation_enabled": true,
+    "automation_enabled": false,
     "dry_run": false,
     "posts_per_week_min": 2,
     "posts_per_week_max": 3,
@@ -1423,7 +1423,7 @@
       },
       "post_text": "Dimidium facti, qui coepit, habet.\n\nOne who has begun has half the deed done.\n\n— Horace, Epistles 1.2.40",
       "scheduled_for": "2026-07-29T18:37:00+00:00",
-      "status": "queued",
+      "status": "cancelled",
       "created_at": "2026-07-27T20:58:32.736340+00:00",
       "attempts": 0
     }
@@ -1565,6 +1565,14 @@
       "at": "2026-07-27T20:58:37.648681+00:00",
       "level": "info",
       "message": "Automation enabled."
+    },
+    {
+      "at": "2026-07-27T20:59:37.473998+00:00",
+      "level": "warning",
+      "message": "Queued posts cancelled and automation paused.",
+      "details": {
+        "count": 1
+      }
     }
   ],
   "ai_candidates": [
