@@ -1,9 +1,9 @@
 {
   "schema_version": 4,
-  "revision": 28,
+  "revision": 29,
   "settings": {
     "automation_enabled": false,
-    "dry_run": true,
+    "dry_run": false,
     "posts_per_week_min": 1,
     "posts_per_week_max": 1,
     "allowed_weekdays": [
@@ -1610,6 +1610,11 @@
     },
     {
       "at": "2026-07-27T21:02:26.413178+00:00",
+      "level": "info",
+      "message": "Schedule settings updated."
+    },
+    {
+      "at": "2026-07-27T22:17:07.740170+00:00",
       "level": "info",
       "message": "Schedule settings updated."
     }
