@@ -1,6 +1,6 @@
 {
   "schema_version": 4,
-  "revision": 19,
+  "revision": 20,
   "settings": {
     "automation_enabled": false,
     "dry_run": true,
@@ -450,7 +450,7 @@
     },
     {
       "id": "horace-ep-1-2-40a",
-      "approved": false,
+      "approved": true,
       "latin": "Dimidium facti, qui coepit, habet.",
       "translation": "One who has begun has half the deed done.",
       "attribution": "Horace, Epistles 1.2.40",
@@ -1568,6 +1568,14 @@
     },
     {
       "at": "2026-07-27T20:50:34.992291+00:00",
+      "level": "info",
+      "message": "Sayings library updated.",
+      "details": {
+        "count": 65
+      }
+    },
+    {
+      "at": "2026-07-27T20:51:01.244656+00:00",
       "level": "info",
       "message": "Sayings library updated.",
       "details": {
