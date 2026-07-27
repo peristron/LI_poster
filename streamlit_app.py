@@ -7,6 +7,7 @@ import copy
 import hashlib
 import json
 import random
+import re
 import secrets
 import threading
 import uuid
@@ -33,16 +34,20 @@ st.set_page_config(
 # ---------------------------------------------------------------------------
 
 APP_NAME = "li_poster"
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.1.0"
 GITHUB_API = "https://api.github.com"
 LINKEDIN_AUTHORIZE_URL = "https://www.linkedin.com/oauth/v2/authorization"
 LINKEDIN_TOKEN_URL = "https://www.linkedin.com/oauth/v2/accessToken"
 LINKEDIN_USERINFO_URL = "https://api.linkedin.com/v2/userinfo"
 LINKEDIN_POST_URL = "https://api.linkedin.com/v2/ugcPosts"
+DEEPSEEK_API_URL = "https://api.deepseek.com/chat/completions"
+DEFAULT_DEEPSEEK_MODEL = "deepseek-v4-flash"
 STATE_BRANCH = "runtime-state"
 STATE_PATH = "runtime/state.json"
 MAX_EVENTS = 500
 MAX_HISTORY = 500
+MAX_AI_CANDIDATES = 100
+SCHEMA_VERSION = 2
 WEEKDAYS = [
     "Monday",
     "Tuesday",
@@ -54,126 +59,464 @@ WEEKDAYS = [
 ]
 
 
-# Every seed entry starts unapproved. The user must review it before scheduling.
-SEED_SAYINGS: list[dict[str, Any]] = [
-    {
-        "id": "seneca-ep-1",
-        "approved": False,
-        "latin": "Dum differtur, vita transcurrit.",
-        "translation": "While it is postponed, life passes by.",
-        "attribution": "Seneca, Epistulae Morales 1.2",
-        "latin_kind": "original Latin",
-        "note": "",
-    },
-    {
-        "id": "horace-odes-1-11",
-        "approved": False,
-        "latin": "Carpe diem, quam minimum credula postero.",
-        "translation": "Seize the day, trusting as little as possible in tomorrow.",
-        "attribution": "Horace, Odes 1.11",
-        "latin_kind": "original Latin",
-        "note": "",
-    },
-    {
-        "id": "terence-heauton-77",
-        "approved": False,
-        "latin": "Homo sum: humani nihil a me alienum puto.",
-        "translation": "I am human; I consider nothing human alien to me.",
-        "attribution": "Terence, Heauton Timorumenos 77",
-        "latin_kind": "original Latin",
-        "note": "",
-    },
-    {
-        "id": "virgil-aeneid-1-203",
-        "approved": False,
-        "latin": "Forsan et haec olim meminisse iuvabit.",
-        "translation": "Perhaps one day it will please us to remember even these things.",
-        "attribution": "Virgil, Aeneid 1.203",
-        "latin_kind": "original Latin",
-        "note": "",
-    },
-    {
-        "id": "ovid-remedia-91",
-        "approved": False,
-        "latin": "Principiis obsta; sero medicina paratur.",
-        "translation": "Resist beginnings; a remedy is prepared too late.",
-        "attribution": "Ovid, Remedia Amoris 91",
-        "latin_kind": "original Latin",
-        "note": "",
-    },
-    {
-        "id": "cicero-officiis-1-22",
-        "approved": False,
-        "latin": "Non nobis solum nati sumus.",
-        "translation": "We are not born for ourselves alone.",
-        "attribution": "Cicero, De Officiis 1.22",
-        "latin_kind": "original Latin",
-        "note": "",
-    },
-    {
-        "id": "augustine-conf-1-1",
-        "approved": False,
-        "latin": "Inquietum est cor nostrum, donec requiescat in te.",
-        "translation": "Our heart is restless until it rests in you.",
-        "attribution": "Augustine, Confessiones 1.1",
-        "latin_kind": "original Latin",
-        "note": "",
-    },
-    {
-        "id": "ecclesiastes-3-1",
-        "approved": False,
-        "latin": "Omnia tempus habent.",
-        "translation": "For everything there is a season.",
-        "attribution": "Ecclesiastes 3:1, Vulgate",
-        "latin_kind": "Vulgate Latin",
-        "note": "",
-    },
-    {
-        "id": "epictetus-ench-1",
-        "approved": False,
-        "latin": "Alia in potestate nostra sunt, alia non sunt.",
-        "translation": "Some things are within our power; others are not.",
-        "attribution": "Epictetus, Enchiridion 1",
-        "latin_kind": "modern Latin rendering from Greek",
-        "note": "Latin rendering; compare the Greek original before approval.",
-    },
-    {
-        "id": "marcus-aurelius-4-3",
-        "approved": False,
-        "latin": "Intra te ipsum recede.",
-        "translation": "Withdraw into yourself.",
-        "attribution": "Marcus Aurelius, Meditations 4.3",
-        "latin_kind": "modern Latin rendering from Greek",
-        "note": "Latin rendering; compare the Greek original before approval.",
-    },
-    {
-        "id": "confucius-analects-15-24",
-        "approved": False,
-        "latin": "Quod tibi fieri non vis, alteri ne feceris.",
-        "translation": "What you do not wish for yourself, do not do to another.",
-        "attribution": "Confucius, Analects 15.24",
-        "latin_kind": "modern Latin rendering from Classical Chinese",
-        "note": "Latin rendering; compare the Classical Chinese original before approval.",
-    },
-    {
-        "id": "laozi-daodejing-33",
-        "approved": False,
-        "latin": "Qui alios novit sapiens est; qui se ipsum novit illuminatus est.",
-        "translation": "One who knows others is wise; one who knows oneself is enlightened.",
-        "attribution": "Laozi, Daodejing 33",
-        "latin_kind": "modern Latin rendering from Classical Chinese",
-        "note": "Latin rendering; compare the Classical Chinese original before approval.",
-    },
-    {
-        "id": "dhammapada-1-5",
-        "approved": False,
-        "latin": "Odium odio numquam sedatur; non odio sedatur.",
-        "translation": "Hatred is never appeased by hatred; it is appeased by non-hatred.",
-        "attribution": "Dhammapada 1.5",
-        "latin_kind": "modern Latin rendering from Pali",
-        "note": "Latin rendering; compare the Pali original before approval.",
-    },
+SAYING_FIELDS = [
+    "approved",
+    "latin",
+    "translation",
+    "attribution",
+    "latin_kind",
+    "source_language",
+    "source_text",
+    "origin",
+    "verification_status",
+    "note",
 ]
+
+
+def seed_saying(
+    saying_id: str,
+    latin: str,
+    translation: str,
+    attribution: str,
+    latin_kind: str = "original Latin",
+    source_language: str = "Latin",
+    source_text: str = "",
+    note: str = "",
+) -> dict[str, Any]:
+    return {
+        "id": saying_id,
+        "approved": False,
+        "latin": latin,
+        "translation": translation,
+        "attribution": attribution,
+        "latin_kind": latin_kind,
+        "source_language": source_language,
+        "source_text": source_text,
+        "origin": "bundled curated library",
+        "verification_status": "review source before approval",
+        "note": note,
+    }
+
+
+# The bundled library is deliberately secular. Every entry remains unapproved
+# until the administrator reviews it. Excerpts are kept short for social posts.
+SEED_SAYINGS: list[dict[str, Any]] = [
+    seed_saying(
+        "seneca-ep-1",
+        "Dum differtur, vita transcurrit.",
+        "While it is postponed, life passes by.",
+        "Seneca, Epistulae Morales 1.2",
+    ),
+    seed_saying(
+        "seneca-ep-1-3",
+        "Omnia aliena sunt, tempus tantum nostrum est.",
+        "Everything belongs to others; time alone is ours.",
+        "Seneca, Epistulae Morales 1.3",
+    ),
+    seed_saying(
+        "seneca-ep-6-5",
+        "Longum iter est per praecepta, breve et efficax per exempla.",
+        "The way through precepts is long; through examples it is short and effective.",
+        "Seneca, Epistulae Morales 6.5",
+    ),
+    seed_saying(
+        "seneca-ep-71-3",
+        "Ignoranti quem portum petat nullus suus ventus est.",
+        "No wind is favorable to one who does not know which harbour to seek.",
+        "Seneca, Epistulae Morales 71.3",
+    ),
+    seed_saying(
+        "seneca-ep-96-5",
+        "Vivere, Lucili, militare est.",
+        "To live, Lucilius, is to struggle.",
+        "Seneca, Epistulae Morales 96.5",
+    ),
+    seed_saying(
+        "seneca-ep-106-12",
+        "Non vitae, sed scholae discimus.",
+        "We learn not for life, but for school.",
+        "Seneca, Epistulae Morales 106.12",
+        note="The familiar modern reversal is not Seneca's original wording.",
+    ),
+    seed_saying(
+        "seneca-hercules-437",
+        "Non est ad astra mollis e terris via.",
+        "There is no easy way from the earth to the stars.",
+        "Seneca, Hercules Furens 437",
+    ),
+    seed_saying(
+        "horace-odes-1-11",
+        "Carpe diem, quam minimum credula postero.",
+        "Seize the day, trusting as little as possible in tomorrow.",
+        "Horace, Odes 1.11",
+    ),
+    seed_saying(
+        "horace-odes-1-37",
+        "Nunc est bibendum.",
+        "Now is the time to drink.",
+        "Horace, Odes 1.37.1",
+    ),
+    seed_saying(
+        "horace-odes-3-30",
+        "Exegi monumentum aere perennius.",
+        "I have raised a monument more lasting than bronze.",
+        "Horace, Odes 3.30.1",
+    ),
+    seed_saying(
+        "horace-odes-4-7",
+        "Pulvis et umbra sumus.",
+        "We are dust and shadow.",
+        "Horace, Odes 4.7.16",
+    ),
+    seed_saying(
+        "horace-ep-1-2-40a",
+        "Dimidium facti, qui coepit, habet.",
+        "One who has begun has half the deed done.",
+        "Horace, Epistles 1.2.40",
+    ),
+    seed_saying(
+        "horace-ep-1-2-40b",
+        "Sapere aude; incipe.",
+        "Dare to be wise; begin.",
+        "Horace, Epistles 1.2.40",
+    ),
+    seed_saying(
+        "horace-ep-1-2-62",
+        "Ira furor brevis est.",
+        "Anger is a brief madness.",
+        "Horace, Epistles 1.2.62",
+    ),
+    seed_saying(
+        "horace-ep-1-11-27",
+        "Caelum, non animum, mutant qui trans mare currunt.",
+        "Those who cross the sea change their sky, not their state of mind.",
+        "Horace, Epistles 1.11.27",
+    ),
+    seed_saying(
+        "horace-satires-1-1-106",
+        "Est modus in rebus.",
+        "There is a proper measure in things.",
+        "Horace, Satires 1.1.106",
+    ),
+    seed_saying(
+        "horace-ars-25",
+        "Brevis esse laboro, obscurus fio.",
+        "When I strive to be brief, I become obscure.",
+        "Horace, Ars Poetica 25",
+    ),
+    seed_saying(
+        "horace-ars-343",
+        "Omne tulit punctum qui miscuit utile dulci.",
+        "One wins every vote who mixes the useful with the pleasant.",
+        "Horace, Ars Poetica 343",
+    ),
+    seed_saying(
+        "horace-ars-361",
+        "Ut pictura poesis.",
+        "As is painting, so is poetry.",
+        "Horace, Ars Poetica 361",
+    ),
+    seed_saying(
+        "terence-heauton-77",
+        "Homo sum: humani nihil a me alienum puto.",
+        "I am human; I consider nothing human alien to me.",
+        "Terence, Heauton Timorumenos 77",
+    ),
+    seed_saying(
+        "terence-andria-68",
+        "Obsequium amicos, veritas odium parit.",
+        "Compliance makes friends; truth produces hatred.",
+        "Terence, Andria 68",
+    ),
+    seed_saying(
+        "terence-phormio-203",
+        "Fortis fortuna adiuvat.",
+        "Fortune helps the brave.",
+        "Terence, Phormio 203",
+    ),
+    seed_saying(
+        "terence-phormio-454",
+        "Quot homines, tot sententiae.",
+        "So many people, so many opinions.",
+        "Terence, Phormio 454",
+    ),
+    seed_saying(
+        "terence-eunuchus-41",
+        "Nullum est iam dictum quod non dictum sit prius.",
+        "Nothing is now said that has not been said before.",
+        "Terence, Eunuchus 41",
+    ),
+    seed_saying(
+        "virgil-aeneid-1-203",
+        "Forsan et haec olim meminisse iuvabit.",
+        "Perhaps one day it will please us to remember even these things.",
+        "Virgil, Aeneid 1.203",
+    ),
+    seed_saying(
+        "virgil-aeneid-2-49",
+        "Timeo Danaos et dona ferentes.",
+        "I fear the Greeks even when they bring gifts.",
+        "Virgil, Aeneid 2.49",
+    ),
+    seed_saying(
+        "virgil-aeneid-2-65",
+        "Ab uno disce omnes.",
+        "From one, learn about them all.",
+        "Virgil, Aeneid 2.65",
+    ),
+    seed_saying(
+        "virgil-aeneid-2-354",
+        "Una salus victis nullam sperare salutem.",
+        "The one safety for the defeated is to hope for no safety.",
+        "Virgil, Aeneid 2.354",
+    ),
+    seed_saying(
+        "virgil-aeneid-5-231",
+        "Possunt, quia posse videntur.",
+        "They can because they believe they can.",
+        "Virgil, Aeneid 5.231",
+    ),
+    seed_saying(
+        "virgil-aeneid-6-126",
+        "Facilis descensus Averno.",
+        "The descent to Avernus is easy.",
+        "Virgil, Aeneid 6.126",
+    ),
+    seed_saying(
+        "virgil-aeneid-6-727",
+        "Mens agitat molem.",
+        "Mind moves matter.",
+        "Virgil, Aeneid 6.727",
+    ),
+    seed_saying(
+        "virgil-aeneid-10-284",
+        "Audentis Fortuna iuvat.",
+        "Fortune favors the daring.",
+        "Virgil, Aeneid 10.284",
+    ),
+    seed_saying(
+        "virgil-eclogues-2-65",
+        "Trahit sua quemque voluptas.",
+        "Each person is drawn by their own pleasure.",
+        "Virgil, Eclogues 2.65",
+    ),
+    seed_saying(
+        "virgil-georgics-1-145",
+        "Labor omnia vicit improbus.",
+        "Relentless work conquered all.",
+        "Virgil, Georgics 1.145–146",
+    ),
+    seed_saying(
+        "virgil-georgics-3-284",
+        "Fugit irreparabile tempus.",
+        "Irrecoverable time is fleeing.",
+        "Virgil, Georgics 3.284",
+    ),
+    seed_saying(
+        "ovid-remedia-91",
+        "Principiis obsta; sero medicina paratur.",
+        "Resist beginnings; a remedy is prepared too late.",
+        "Ovid, Remedia Amoris 91",
+    ),
+    seed_saying(
+        "ovid-met-4-428",
+        "Fas est et ab hoste doceri.",
+        "It is right to learn even from an enemy.",
+        "Ovid, Metamorphoses 4.428",
+    ),
+    seed_saying(
+        "ovid-met-7-20",
+        "Video meliora proboque, deteriora sequor.",
+        "I see and approve the better course, but follow the worse.",
+        "Ovid, Metamorphoses 7.20–21",
+    ),
+    seed_saying(
+        "ovid-met-15-234",
+        "Tempus edax rerum.",
+        "Time, the devourer of things.",
+        "Ovid, Metamorphoses 15.234",
+    ),
+    seed_saying(
+        "ovid-ex-ponto-4-10",
+        "Gutta cavat lapidem.",
+        "A drop hollows out a stone.",
+        "Ovid, Epistulae ex Ponto 4.10.5",
+    ),
+    seed_saying(
+        "cicero-officiis-1-22",
+        "Non nobis solum nati sumus.",
+        "We are not born for ourselves alone.",
+        "Cicero, De Officiis 1.22",
+    ),
+    seed_saying(
+        "cicero-officiis-1-33",
+        "Summum ius summa iniuria.",
+        "The strictest law can become the greatest injustice.",
+        "Cicero, De Officiis 1.33",
+    ),
+    seed_saying(
+        "cicero-pro-milone-11",
+        "Silent enim leges inter arma.",
+        "For laws fall silent amid arms.",
+        "Cicero, Pro Milone 11",
+    ),
+    seed_saying(
+        "cicero-pro-cluentio-146",
+        "Legum servi sumus ut liberi esse possimus.",
+        "We are servants of the laws so that we may be free.",
+        "Cicero, Pro Cluentio 146",
+    ),
+    seed_saying(
+        "cicero-de-legibus-3-8",
+        "Salus populi suprema lex esto.",
+        "Let the welfare of the people be the highest law.",
+        "Cicero, De Legibus 3.8",
+    ),
+    seed_saying(
+        "cicero-in-catilinam-1-2",
+        "O tempora, o mores!",
+        "Oh, the times! Oh, the customs!",
+        "Cicero, In Catilinam 1.2",
+    ),
+    seed_saying(
+        "cicero-orator-120",
+        "Nescire quid ante quam natus sis acciderit, id est semper esse puerum.",
+        "Not to know what happened before you were born is always to remain a child.",
+        "Cicero, Orator 120",
+    ),
+    seed_saying(
+        "ennius-amicus-certus",
+        "Amicus certus in re incerta cernitur.",
+        "A sure friend is recognized in uncertain circumstances.",
+        "Ennius, fragment quoted by Cicero, De Amicitia 64",
+    ),
+    seed_saying(
+        "sallust-jugurtha-10-6",
+        "Concordia parvae res crescunt, discordia maximae dilabuntur.",
+        "Through harmony small things grow; through discord the greatest collapse.",
+        "Sallust, Bellum Iugurthinum 10.6",
+    ),
+    seed_saying(
+        "tacitus-annals-1-1",
+        "Sine ira et studio.",
+        "Without anger or partiality.",
+        "Tacitus, Annales 1.1",
+    ),
+    seed_saying(
+        "tacitus-annals-3-27",
+        "Corruptissima re publica plurimae leges.",
+        "The more corrupt the state, the more numerous the laws.",
+        "Tacitus, Annales 3.27",
+    ),
+    seed_saying(
+        "tacitus-agricola-30a",
+        "Omne ignotum pro magnifico est.",
+        "Everything unknown is taken as magnificent.",
+        "Tacitus, Agricola 30",
+    ),
+    seed_saying(
+        "tacitus-agricola-30b",
+        "Ubi solitudinem faciunt, pacem appellant.",
+        "Where they make a desert, they call it peace.",
+        "Tacitus, Agricola 30",
+    ),
+    seed_saying(
+        "juvenal-satire-6-347",
+        "Quis custodiet ipsos custodes?",
+        "Who will guard the guards themselves?",
+        "Juvenal, Satires 6.347–348",
+    ),
+    seed_saying(
+        "juvenal-satire-10-81",
+        "Panem et circenses.",
+        "Bread and circuses.",
+        "Juvenal, Satires 10.81",
+    ),
+    seed_saying(
+        "juvenal-satire-10-356",
+        "Mens sana in corpore sano.",
+        "A healthy mind in a healthy body.",
+        "Juvenal, Satires 10.356",
+    ),
+    seed_saying(
+        "martial-epigrams-6-70",
+        "Non est vivere, sed valere vita est.",
+        "Life is not merely being alive, but being well.",
+        "Martial, Epigrams 6.70.15",
+    ),
+    seed_saying(
+        "catullus-85",
+        "Odi et amo.",
+        "I hate and I love.",
+        "Catullus, Carmina 85",
+    ),
+    seed_saying(
+        "pliny-nh-35-84",
+        "Nulla dies sine linea.",
+        "No day without a line.",
+        "Traditional Latin rendering of Pliny, Naturalis Historia 35.84",
+        "traditional Latin rendering",
+        "Greek",
+        note="Pliny recounts the saying in relation to the painter Apelles.",
+    ),
+    seed_saying(
+        "suetonius-caesar-32",
+        "Iacta alea est.",
+        "The die has been cast.",
+        "Suetonius, Divus Iulius 32",
+        note="Suetonius reports the phrase; compare Plutarch's Greek account.",
+    ),
+    seed_saying(
+        "suetonius-caesar-37",
+        "Veni, vidi, vici.",
+        "I came, I saw, I conquered.",
+        "Suetonius, Divus Iulius 37",
+    ),
+    seed_saying(
+        "epictetus-ench-1",
+        "Alia in potestate nostra sunt, alia non sunt.",
+        "Some things are within our power; others are not.",
+        "Epictetus, Enchiridion 1",
+        "modern Latin rendering from Greek",
+        "Ancient Greek",
+        note="Compare the Ancient Greek original before approval.",
+    ),
+    seed_saying(
+        "marcus-aurelius-4-3",
+        "Intra te ipsum recede.",
+        "Withdraw into yourself.",
+        "Marcus Aurelius, Meditations 4.3",
+        "modern Latin rendering from Greek",
+        "Ancient Greek",
+        note="Compare the Ancient Greek original before approval.",
+    ),
+    seed_saying(
+        "confucius-analects-15-24",
+        "Quod tibi fieri non vis, alteri ne feceris.",
+        "What you do not wish for yourself, do not do to another.",
+        "Confucius, Analects 15.24",
+        "modern Latin rendering from Classical Chinese",
+        "Classical Chinese",
+        note="Compare the Classical Chinese original before approval.",
+    ),
+    seed_saying(
+        "laozi-daodejing-33",
+        "Qui alios novit sapiens est; qui se ipsum novit illuminatus est.",
+        "One who knows others is wise; one who knows oneself is enlightened.",
+        "Laozi, Daodejing 33",
+        "modern Latin rendering from Classical Chinese",
+        "Classical Chinese",
+        note="Compare the Classical Chinese original before approval.",
+    ),
+]
+
+# These religious starter entries existed in v1.0.0. Migration removes them
+# from the active library without disturbing OAuth, settings, queue, or history.
+RETIRED_SEED_IDS = {
+    "augustine-conf-1-1",
+    "ecclesiastes-3-1",
+    "dhammapada-1-5",
+}
 
 
 # ---------------------------------------------------------------------------
@@ -200,9 +543,67 @@ def required_secret_names() -> list[str]:
     ]
 
 
+def normalize_space(value: Any) -> str:
+    return re.sub(r"\s+", " ", str(value or "")).strip()
+
+
+def saying_fingerprint(record: dict[str, Any]) -> str:
+    basis = "|".join(
+        [
+            normalize_space(record.get("latin")).casefold(),
+            normalize_space(record.get("attribution")).casefold(),
+        ]
+    )
+    return hashlib.sha256(basis.encode("utf-8")).hexdigest()
+
+
+def normalize_saying(
+    record: dict[str, Any],
+    *,
+    default_origin: str = "manual entry",
+) -> dict[str, Any]:
+    normalized = {
+        "id": normalize_space(record.get("id")) or secrets.token_hex(8),
+        "approved": bool(record.get("approved", False)),
+        "latin": normalize_space(record.get("latin")),
+        "translation": normalize_space(record.get("translation")),
+        "attribution": normalize_space(record.get("attribution")),
+        "latin_kind": normalize_space(record.get("latin_kind"))
+        or "modern Latin rendering",
+        "source_language": normalize_space(record.get("source_language"))
+        or "unknown",
+        "source_text": normalize_space(record.get("source_text")),
+        "origin": normalize_space(record.get("origin")) or default_origin,
+        "verification_status": normalize_space(
+            record.get("verification_status")
+        )
+        or "needs human verification",
+        "note": normalize_space(record.get("note")),
+    }
+    return normalized
+
+
+def merge_curated_library(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    active = [
+        normalize_saying(record)
+        for record in records
+        if str(record.get("id", "")) not in RETIRED_SEED_IDS
+    ]
+    ids = {record["id"] for record in active}
+    fingerprints = {saying_fingerprint(record) for record in active}
+    for seed in SEED_SAYINGS:
+        fingerprint = saying_fingerprint(seed)
+        if seed["id"] in ids or fingerprint in fingerprints:
+            continue
+        active.append(copy.deepcopy(seed))
+        ids.add(seed["id"])
+        fingerprints.add(fingerprint)
+    return active
+
+
 def new_state() -> dict[str, Any]:
     return {
-        "schema_version": 1,
+        "schema_version": SCHEMA_VERSION,
         "revision": 0,
         "settings": {
             "automation_enabled": False,
@@ -227,6 +628,7 @@ def new_state() -> dict[str, Any]:
         },
         "oauth": {},
         "sayings": copy.deepcopy(SEED_SAYINGS),
+        "ai_candidates": [],
         "queue": [],
         "history": [],
         "events": [],
@@ -235,7 +637,7 @@ def new_state() -> dict[str, Any]:
 
 def normalize_state(state: dict[str, Any]) -> dict[str, Any]:
     defaults = new_state()
-    state.setdefault("schema_version", 1)
+    state["schema_version"] = SCHEMA_VERSION
     state.setdefault("revision", 0)
     state.setdefault("settings", {})
     for key, value in defaults["settings"].items():
@@ -244,7 +646,14 @@ def normalize_state(state: dict[str, Any]) -> dict[str, Any]:
     for key, value in defaults["linkedin"].items():
         state["linkedin"].setdefault(key, value)
     state.setdefault("oauth", {})
-    state.setdefault("sayings", copy.deepcopy(SEED_SAYINGS))
+    state["sayings"] = merge_curated_library(
+        list(state.get("sayings") or [])
+    )
+    state.setdefault("ai_candidates", [])
+    state["ai_candidates"] = [
+        normalize_saying(record, default_origin="DeepSeek candidate")
+        for record in list(state["ai_candidates"] or [])
+    ][-MAX_AI_CANDIDATES:]
     state.setdefault("queue", [])
     state.setdefault("history", [])
     state.setdefault("events", [])
@@ -266,15 +675,13 @@ def append_event(
 
 
 def format_post(saying: dict[str, Any]) -> str:
-    parts = [
+    return "\n\n".join(
+        [
         str(saying["latin"]).strip(),
         str(saying["translation"]).strip(),
         f"— {str(saying['attribution']).strip()}",
-    ]
-    note = str(saying.get("note", "")).strip()
-    if note:
-        parts.append(note)
-    return "\n\n".join(parts)
+        ]
+    )
 
 
 def encrypt_value(value: str, key: str) -> str:
@@ -288,6 +695,298 @@ def decrypt_value(value: str, key: str) -> str:
         raise ValueError(
             "The stored LinkedIn credential cannot be decrypted with FERNET_KEY."
         ) from exc
+
+
+# ---------------------------------------------------------------------------
+# DeepSeek-assisted candidate generation and review
+# ---------------------------------------------------------------------------
+
+class DeepSeekError(RuntimeError):
+    pass
+
+
+def parse_json_object(value: str) -> dict[str, Any]:
+    text = str(value or "").strip()
+    if text.startswith("```"):
+        text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.IGNORECASE)
+        text = re.sub(r"\s*```$", "", text)
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise DeepSeekError(
+            "DeepSeek returned a response that was not valid JSON."
+        ) from exc
+    if not isinstance(parsed, dict):
+        raise DeepSeekError("DeepSeek returned an unexpected JSON structure.")
+    return parsed
+
+
+def call_deepseek_json(
+    api_key: str,
+    model: str,
+    system_prompt: str,
+    user_prompt: str,
+    *,
+    max_tokens: int = 3000,
+) -> dict[str, Any]:
+    if not api_key:
+        raise DeepSeekError(
+            "Add DEEPSEEK_API_KEY to Streamlit Secrets before using AI tools."
+        )
+    payload = {
+        "model": model or DEFAULT_DEEPSEEK_MODEL,
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        "response_format": {"type": "json_object"},
+        "temperature": 0.2,
+        "max_tokens": int(max_tokens),
+        "stream": False,
+    }
+    try:
+        response = requests.post(
+            DEEPSEEK_API_URL,
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json=payload,
+            timeout=75,
+        )
+    except requests.Timeout as exc:
+        raise DeepSeekError(
+            "DeepSeek timed out. No candidates were saved; try a smaller request."
+        ) from exc
+    except requests.RequestException as exc:
+        raise DeepSeekError(f"DeepSeek request failed: {exc}") from exc
+    if response.status_code != 200:
+        messages = {
+            401: "DeepSeek rejected the API key.",
+            402: "The DeepSeek account has insufficient balance.",
+            429: "DeepSeek is temporarily rate-limiting this account.",
+        }
+        detail = messages.get(
+            response.status_code,
+            f"DeepSeek returned HTTP {response.status_code}.",
+        )
+        raise DeepSeekError(detail)
+    try:
+        body = response.json()
+        choice = body["choices"][0]
+        if choice.get("finish_reason") == "length":
+            raise DeepSeekError(
+                "DeepSeek reached its output limit. Request fewer candidates."
+            )
+        content = choice["message"]["content"]
+    except (KeyError, IndexError, TypeError, ValueError) as exc:
+        raise DeepSeekError("DeepSeek returned an incomplete response.") from exc
+    if not str(content or "").strip():
+        raise DeepSeekError(
+            "DeepSeek returned an empty response. Please try once more."
+        )
+    return parse_json_object(str(content))
+
+
+def validate_ai_candidate(
+    raw: dict[str, Any],
+    *,
+    origin: str,
+) -> dict[str, Any]:
+    if raw.get("secular") is not True:
+        raise ValueError("Candidate was not explicitly classified as secular.")
+    candidate = normalize_saying(
+        {
+            **raw,
+            "id": f"ai-{secrets.token_hex(8)}",
+            "approved": False,
+            "origin": origin,
+            "verification_status": "AI candidate; human verification required",
+        },
+        default_origin=origin,
+    )
+    missing = [
+        field
+        for field in ("latin", "translation", "attribution", "latin_kind")
+        if not candidate[field]
+    ]
+    if missing:
+        raise ValueError(f"Candidate is missing: {', '.join(missing)}.")
+    if len(format_post(candidate)) > 3000:
+        raise ValueError("Candidate exceeds LinkedIn's supported text length.")
+    return candidate
+
+
+def generate_deepseek_sayings(
+    api_key: str,
+    model: str,
+    quantity: int,
+    themes: str,
+    source_preferences: str,
+) -> tuple[list[dict[str, Any]], list[str]]:
+    system_prompt = """
+You are a cautious classical-language editorial assistant. Return JSON only.
+Propose concise, secular sayings from antiquity (normally before 500 CE) for
+human review. Exclude scripture, prayers, theology, devotional teaching,
+denominational material, and quotations whose attribution you cannot identify.
+Never invent an author, work, section, source text, or claim of original Latin.
+For a Latin author, quote the original Latin. For a source in another language,
+create a concise modern Latin rendering and label it honestly. The English
+translation must match the Latin. A candidate may be plausible yet must still
+be treated as unverified.
+
+Return this JSON shape:
+{
+  "candidates": [
+    {
+      "latin": "...",
+      "translation": "...",
+      "attribution": "author, work and section where known",
+      "latin_kind": "original Latin OR modern Latin rendering from <language>",
+      "source_language": "...",
+      "source_text": "original-language text if reliably known, otherwise blank",
+      "note": "specific verification caveat or blank",
+      "secular": true
+    }
+  ]
+}
+""".strip()
+    user_prompt = (
+        f"Return exactly {int(quantity)} distinct candidates in JSON. "
+        f"Preferred themes: {normalize_space(themes) or 'wisdom, time, learning, courage, friendship'}. "
+        f"Source preferences: {normalize_space(source_preferences) or 'a varied secular selection'}. "
+        "Keep each finished Latin/translation/attribution post concise."
+    )
+    parsed = call_deepseek_json(
+        api_key,
+        model,
+        system_prompt,
+        user_prompt,
+        max_tokens=max(1800, int(quantity) * 450),
+    )
+    raw_candidates = parsed.get("candidates", [])
+    if not isinstance(raw_candidates, list):
+        raise DeepSeekError("DeepSeek did not return a candidate list.")
+    candidates: list[dict[str, Any]] = []
+    warnings: list[str] = []
+    for index, raw in enumerate(raw_candidates):
+        try:
+            if not isinstance(raw, dict):
+                raise ValueError("Candidate is not a JSON object.")
+            candidates.append(
+                validate_ai_candidate(
+                    raw,
+                    origin=f"DeepSeek suggestion ({model})",
+                )
+            )
+        except ValueError as exc:
+            warnings.append(f"Candidate {index + 1} was skipped: {exc}")
+    if not candidates:
+        raise DeepSeekError(
+            "DeepSeek returned no usable secular candidates."
+        )
+    return candidates, warnings
+
+
+def translate_with_deepseek(
+    api_key: str,
+    model: str,
+    source_text: str,
+    source_language: str,
+    attribution: str,
+) -> dict[str, Any]:
+    system_prompt = """
+You are a cautious Latin translator. Return JSON only. Translate the supplied
+short text into clear, idiomatic Latin and provide a literal English
+back-translation. Do not invent an ancient provenance or attribution. Preserve
+the supplied attribution exactly; if none was supplied, use
+"User-supplied text". The result must be secular and non-religious.
+
+Return this JSON shape:
+{
+  "candidate": {
+    "latin": "...",
+    "translation": "...",
+    "attribution": "...",
+    "latin_kind": "modern Latin rendering from <language>",
+    "source_language": "...",
+    "source_text": "...",
+    "note": "AI translation; verify the Latin before approval.",
+    "secular": true
+  }
+}
+""".strip()
+    safe_text = str(source_text or "").strip()[:4000]
+    if not safe_text:
+        raise DeepSeekError("Enter text to translate.")
+    user_prompt = json.dumps(
+        {
+            "source_text": safe_text,
+            "source_language": normalize_space(source_language) or "unknown",
+            "attribution": normalize_space(attribution)
+            or "User-supplied text",
+        },
+        ensure_ascii=False,
+    )
+    parsed = call_deepseek_json(
+        api_key,
+        model,
+        system_prompt,
+        f"Translate this JSON input and return the requested JSON output: {user_prompt}",
+        max_tokens=1400,
+    )
+    raw = parsed.get("candidate")
+    if not isinstance(raw, dict):
+        raise DeepSeekError("DeepSeek did not return a translation candidate.")
+    raw["attribution"] = normalize_space(attribution) or "User-supplied text"
+    raw["source_text"] = safe_text
+    raw["source_language"] = normalize_space(source_language) or "unknown"
+    return validate_ai_candidate(
+        raw,
+        origin=f"DeepSeek translation ({model})",
+    )
+
+
+def review_with_deepseek(
+    api_key: str,
+    model: str,
+    candidate: dict[str, Any],
+) -> dict[str, Any]:
+    system_prompt = """
+You are a skeptical classical-language reviewer. Return JSON only. Assess the
+candidate without rewriting it. Check Latin grammar, translation fidelity,
+whether the Latin is original or modern, whether the attribution is plausible,
+and whether it is secular and non-religious. Do not claim external verification.
+
+Return:
+{
+  "overall": "pass | caution | reject",
+  "latin_assessment": "...",
+  "translation_assessment": "...",
+  "attribution_assessment": "...",
+  "secularity_assessment": "...",
+  "recommended_action": "..."
+}
+""".strip()
+    parsed = call_deepseek_json(
+        api_key,
+        model,
+        system_prompt,
+        "Review this candidate JSON: "
+        + json.dumps(candidate, ensure_ascii=False),
+        max_tokens=1500,
+    )
+    required = [
+        "overall",
+        "latin_assessment",
+        "translation_assessment",
+        "attribution_assessment",
+        "secularity_assessment",
+        "recommended_action",
+    ]
+    if any(not normalize_space(parsed.get(field)) for field in required):
+        raise DeepSeekError("DeepSeek returned an incomplete review.")
+    return {field: normalize_space(parsed[field]) for field in required}
 
 
 # ---------------------------------------------------------------------------
@@ -698,10 +1397,18 @@ def generate_schedule(
     ]
     occupied.extend(completed_times[-recent_window:])
 
-    recently_used = {item["saying_id"] for item in pending}
-    recently_used.update(
-        item["saying_id"] for item in state["history"][-recent_window:]
+    pending_ids = {item["saying_id"] for item in pending}
+    history_block_count = min(
+        recent_window,
+        max(0, len(approved) - 1),
     )
+    recent_history = (
+        state["history"][-history_block_count:]
+        if history_block_count
+        else []
+    )
+    recently_used = set(pending_ids)
+    recently_used.update(item["saying_id"] for item in recent_history)
 
     rng = random.SystemRandom()
     added = 0
@@ -744,20 +1451,29 @@ def generate_schedule(
                 item for item in approved if item["id"] not in recently_used
             ]
             if not choices:
-                recently_used.clear()
-                choices = approved
+                # Never create two active queue entries for the same saying.
+                # Once the historical rotation is exhausted, reuse is allowed
+                # only when that saying is no longer pending.
+                choices = [
+                    item for item in approved if item["id"] not in pending_ids
+                ]
+            if not choices:
+                break
             saying = rng.choice(choices)
-            state["queue"].append(
-                {
-                    "id": str(uuid.uuid4()),
-                    "saying_id": saying["id"],
-                    "scheduled_for": candidate.astimezone(timezone.utc).isoformat(),
-                    "status": "queued",
-                    "created_at": now.isoformat(),
-                    "attempts": 0,
-                }
-            )
+            queue_record = {
+                "id": str(uuid.uuid4()),
+                "saying_id": saying["id"],
+                "saying_snapshot": copy.deepcopy(saying),
+                "post_text": format_post(saying),
+                "scheduled_for": candidate.astimezone(timezone.utc).isoformat(),
+                "status": "queued",
+                "created_at": now.isoformat(),
+                "attempts": 0,
+            }
+            state["queue"].append(queue_record)
+            pending.append(queue_record)
             occupied.append(candidate)
+            pending_ids.add(saying["id"])
             recently_used.add(saying["id"])
             needed -= 1
             added += 1
@@ -867,10 +1583,36 @@ class PosterWorker:
 
         fresh, _ = self.store.load()
         saying = next(
-            row
-            for row in fresh["sayings"]
-            if row["id"] == claimed["saying_id"]
+            (
+                row
+                for row in fresh["sayings"]
+                if row["id"] == claimed["saying_id"]
+            ),
+            None,
         )
+        if not saying or not bool(saying.get("approved")):
+
+            def stop_unapproved(current: dict[str, Any]) -> None:
+                item = next(
+                    row for row in current["queue"] if row["id"] == queue_id
+                )
+                item["status"] = "needs_review"
+                item["error"] = (
+                    "The saying was removed or unapproved after scheduling."
+                )
+                current["settings"]["automation_enabled"] = False
+                append_event(
+                    current,
+                    "warning",
+                    "Automation paused before an unapproved saying could post.",
+                    queue_id=queue_id,
+                )
+
+            self.store.update(stop_unapproved)
+            return
+        post_text = str(claimed.get("post_text", "")).strip()
+        if not post_text:
+            post_text = format_post(saying)
         try:
             post_id = publish_linkedin_post(
                 decrypt_value(
@@ -878,7 +1620,7 @@ class PosterWorker:
                     self.fernet_key,
                 ),
                 fresh["linkedin"]["person_id"],
-                format_post(saying),
+                post_text,
                 fresh["settings"]["visibility"],
             )
         except LinkedInError as exc:
@@ -990,14 +1732,23 @@ def queue_dataframe(
     sayings = {item["id"]: item for item in state["sayings"]}
     rows = []
     for item in state["queue"]:
-        saying = sayings.get(item["saying_id"], {})
+        saying = sayings.get(
+            item["saying_id"],
+            item.get("saying_snapshot", {}),
+        )
         scheduled = pd.Timestamp(item["scheduled_for"]).tz_convert(timezone_name)
         rows.append(
             {
                 "when": scheduled.strftime("%Y-%m-%d %H:%M %Z"),
                 "status": item["status"],
                 "latin": saying.get("latin", "Missing saying"),
+                "translation": saying.get("translation", ""),
                 "attribution": saying.get("attribution", ""),
+                "characters": len(
+                    str(item.get("post_text") or format_post(saying))
+                )
+                if saying
+                else 0,
                 "error": item.get("error", ""),
             }
         )
@@ -1111,21 +1862,212 @@ def render_dashboard(
             store.update(mark_not_posted)
             st.rerun()
 
+    with st.expander("How to use this app"):
+        st.markdown(
+            """
+### Safe first-time workflow
 
-def render_sayings(store: GitHubStateStore, state: dict[str, Any]) -> None:
+1. Confirm the Dashboard shows **LinkedIn: Connected**, **Automation:
+   Paused**, and **Dry-run mode is on**.
+2. Open **Sayings**. Review the Latin, translation, attribution,
+   classification, source information, and internal note. Approve only entries
+   you are comfortable publishing, then select **Save sayings**.
+3. Optionally use **Import sayings from CSV**. Imported rows are forced to
+   unapproved status.
+4. Optionally use the **DeepSeek AI workshop**. Generated and translated
+   material is staged separately and can enter the library only as unapproved
+   content. AI review is useful editorial assistance, not source verification.
+5. Open **Schedule**. Choose the weekly range, allowed days, randomized time
+   window, minimum spacing, visibility, and schedule horizon. Save the settings.
+6. While dry-run remains on, select **Fill randomized schedule** and inspect
+   every queued item on the Dashboard.
+7. If desired, use **LinkedIn and setup → Publish a connections-only test**.
+   This is a real immediate post and bypasses dry-run mode.
+8. For live operation, return to **Schedule**, turn dry-run off, save, inspect
+   the queue again, and only then select **Enable automation**.
+
+### Sayings and AI safeguards
+
+- Internal notes and verification status are never included in LinkedIn text.
+- A LinkedIn post contains only Latin, English translation, and attribution.
+- Removing or unapproving a scheduled saying pauses automation before it can
+  publish. Cancel and refill the queue after material library changes.
+- The scheduler avoids duplicate active queue entries for a saying and rotates
+  through approved material before reusing older entries.
+- DeepSeek requests use the API account configured by `DEEPSEEK_API_KEY` and
+  may incur usage charges. The API key is never displayed or written to GitHub
+  runtime state.
+- Check AI-generated Latin and attribution against a reliable edition or other
+  authoritative source before approval.
+
+### LinkedIn token renewal
+
+- The LinkedIn access token normally expires after the date shown under
+  **LinkedIn and setup**. When it expires, the worker marks LinkedIn as
+  disconnected and pauses automation.
+- To renew it, keep automation paused, open **LinkedIn and setup**, select
+  **Prepare LinkedIn connection**, then **Continue to LinkedIn**, and authorize
+  the app again. The new encrypted token replaces the expired one.
+- A prepared authorization link expires after ten minutes. Prepare a new link
+  if LinkedIn reports an invalid or expired authorization request.
+
+### Troubleshooting
+
+- **App will not finish launching:** use Python 3.12 in Streamlit App settings,
+  inspect **Manage app → Logs**, and reboot once after correcting the reported
+  issue.
+- **LinkedIn is not connected or returns 401:** reconnect it using the renewal
+  steps above. Confirm the developer app still has `openid`, `profile`, and
+  `w_member_social`.
+- **OAuth redirect error:** the LinkedIn developer app and
+  `LINKEDIN_REDIRECT_URI` must both use the exact deployed HTTPS URL, including
+  the trailing slash when configured that way.
+- **GitHub state cannot initialize:** confirm `GITHUB_STATE_TOKEN` has
+  read/write Contents access to only the configured repository and has not
+  expired.
+- **Stored LinkedIn credential cannot be decrypted:** restore the original
+  `FERNET_KEY`. If it was intentionally replaced, reconnect LinkedIn to store a
+  token encrypted with the new key.
+- **DeepSeek 401:** replace an invalid API key. **402:** check the DeepSeek
+  balance. **429:** wait and retry. For a timeout or truncated result, request
+  fewer candidates.
+- **Posting result is uncertain:** check LinkedIn directly before choosing
+  **Mark as posted** or **Mark as not posted**. Do not blindly retry an
+  uncertain request.
+- **App hibernation or restart:** the external app waker can bring the
+  Streamlit process back. Community hosting and wake-up timing are best-effort,
+  so scheduled times should be treated as approximate rather than guaranteed
+  to the minute.
+- **Changing schedule or content:** pause automation first. Cancel queued
+  posts, make and save the changes, then refill and review the schedule.
+
+Keep all secrets in Streamlit Secrets. Never place API keys, GitHub tokens,
+LinkedIn secrets, passwords, access tokens, or the Fernet key in GitHub.
+"""
+        )
+
+
+def validate_library_records(
+    records: list[dict[str, Any]],
+    max_post_chars: int,
+) -> tuple[list[dict[str, Any]], list[str]]:
+    normalized: list[dict[str, Any]] = []
+    errors: list[str] = []
+    seen: dict[str, int] = {}
+    for index, raw in enumerate(records):
+        record = normalize_saying(raw)
+        missing = [
+            field
+            for field in ("latin", "translation", "attribution")
+            if not record[field]
+        ]
+        if missing:
+            errors.append(
+                f"Row {index + 1} is missing: {', '.join(missing)}."
+            )
+        length = len(format_post(record))
+        if length > int(max_post_chars):
+            errors.append(
+                f"Row {index + 1} is {length} characters; the maximum is "
+                f"{max_post_chars}."
+            )
+        fingerprint = saying_fingerprint(record)
+        if fingerprint in seen:
+            errors.append(
+                f"Rows {seen[fingerprint]} and {index + 1} duplicate the "
+                "same Latin and attribution."
+            )
+        else:
+            seen[fingerprint] = index + 1
+        normalized.append(record)
+    return normalized, errors
+
+
+def add_unapproved_records(
+    current: dict[str, Any],
+    records: list[dict[str, Any]],
+    event_message: str,
+) -> tuple[int, int]:
+    fingerprints = {
+        saying_fingerprint(item) for item in current["sayings"]
+    }
+    added = 0
+    duplicates = 0
+    for raw in records:
+        record = normalize_saying(raw)
+        record["id"] = (
+            record["id"]
+            if record["id"]
+            and all(
+                existing["id"] != record["id"]
+                for existing in current["sayings"]
+            )
+            else secrets.token_hex(8)
+        )
+        record["approved"] = False
+        fingerprint = saying_fingerprint(record)
+        if fingerprint in fingerprints:
+            duplicates += 1
+            continue
+        current["sayings"].append(record)
+        fingerprints.add(fingerprint)
+        added += 1
+    append_event(
+        current,
+        "info",
+        event_message,
+        added=added,
+        duplicates_skipped=duplicates,
+    )
+    return added, duplicates
+
+
+def stage_ai_candidates(
+    current: dict[str, Any],
+    candidates: list[dict[str, Any]],
+) -> tuple[int, int]:
+    fingerprints = {
+        saying_fingerprint(item)
+        for item in current["sayings"] + current["ai_candidates"]
+    }
+    added = 0
+    duplicates = 0
+    for candidate in candidates:
+        fingerprint = saying_fingerprint(candidate)
+        if fingerprint in fingerprints:
+            duplicates += 1
+            continue
+        current["ai_candidates"].append(copy.deepcopy(candidate))
+        fingerprints.add(fingerprint)
+        added += 1
+    current["ai_candidates"] = current["ai_candidates"][
+        -MAX_AI_CANDIDATES:
+    ]
+    append_event(
+        current,
+        "info",
+        "DeepSeek candidates staged for human review.",
+        added=added,
+        duplicates_skipped=duplicates,
+    )
+    return added, duplicates
+
+
+def render_sayings(
+    store: GitHubStateStore,
+    state: dict[str, Any],
+    config: dict[str, str],
+) -> None:
     st.header("Sayings")
     st.caption(
-        "Review every entry before approving it. Some entries are modern Latin "
-        "renderings of sayings originally written in another language."
+        "Only approved entries can be scheduled. Review original wording, "
+        "translation, attribution, and internal notes before approval."
     )
-    display_columns = [
-        "approved",
-        "latin",
-        "translation",
-        "attribution",
-        "latin_kind",
-        "note",
-    ]
+    notice = st.session_state.pop("sayings_notice", "")
+    if notice:
+        st.success(notice)
+
+    display_columns = ["id", *SAYING_FIELDS]
     editor = pd.DataFrame(state["sayings"])[display_columns]
     edited = st.data_editor(
         editor,
@@ -1133,37 +2075,22 @@ def render_sayings(store: GitHubStateStore, state: dict[str, Any]) -> None:
         hide_index=True,
         num_rows="dynamic",
         column_config={
-            "approved": st.column_config.CheckboxColumn("approved")
+            "id": None,
+            "approved": st.column_config.CheckboxColumn("approved"),
+            "note": st.column_config.TextColumn(
+                "internal note",
+                help="Internal only; this text is never included in a post.",
+            ),
         },
         key=f"sayings_editor_{state['revision']}",
     )
     left, right = st.columns(2)
     if left.button("Save sayings", type="primary"):
-        records = edited.fillna("").to_dict("records")
-        originals = state["sayings"]
-        errors: list[str] = []
-        for index, record in enumerate(records):
-            record["id"] = (
-                originals[index]["id"]
-                if index < len(originals)
-                else secrets.token_hex(8)
-            )
-            record["approved"] = bool(record["approved"])
-            missing = [
-                field
-                for field in ("latin", "translation", "attribution")
-                if not str(record[field]).strip()
-            ]
-            if missing:
-                errors.append(
-                    f"Row {index + 1} is missing: {', '.join(missing)}."
-                )
-            length = len(format_post(record))
-            if length > int(state["settings"]["max_post_chars"]):
-                errors.append(
-                    f"Row {index + 1} is {length} characters; the maximum is "
-                    f"{state['settings']['max_post_chars']}."
-                )
+        raw_records = edited.fillna("").to_dict("records")
+        records, errors = validate_library_records(
+            raw_records,
+            int(state["settings"]["max_post_chars"]),
+        )
         if errors:
             st.error("\n".join(errors))
         else:
@@ -1195,6 +2122,301 @@ def render_sayings(store: GitHubStateStore, state: dict[str, Any]) -> None:
         f"{approved_count} of {len(state['sayings'])} sayings are approved."
     )
 
+    with st.expander("Import sayings from CSV"):
+        st.write(
+            "Upload a UTF-8 CSV containing `latin`, `translation`, and "
+            "`attribution`. Optional columns match the downloaded CSV. "
+            "Imported rows are always unapproved."
+        )
+        upload = st.file_uploader(
+            "Sayings CSV",
+            type=["csv"],
+            key="sayings_csv_upload",
+        )
+        if upload is not None and st.button("Import CSV as unapproved"):
+            try:
+                frame = pd.read_csv(upload, dtype=str).fillna("")
+                missing_columns = [
+                    field
+                    for field in ("latin", "translation", "attribution")
+                    if field not in frame.columns
+                ]
+                if missing_columns:
+                    raise ValueError(
+                        "Missing CSV columns: "
+                        + ", ".join(missing_columns)
+                    )
+                records = frame.to_dict("records")
+                normalized, errors = validate_library_records(
+                    records,
+                    int(state["settings"]["max_post_chars"]),
+                )
+                if errors:
+                    raise ValueError("\n".join(errors))
+                added, duplicates = store.update(
+                    lambda current: add_unapproved_records(
+                        current,
+                        normalized,
+                        "Sayings imported from CSV.",
+                    )
+                )
+                st.session_state["sayings_notice"] = (
+                    f"Imported {added} saying(s); skipped "
+                    f"{duplicates} duplicate(s)."
+                )
+                st.rerun()
+            except (ValueError, pd.errors.ParserError) as exc:
+                st.error(f"CSV import failed: {exc}")
+
+    with st.expander("DeepSeek AI workshop"):
+        model = (
+            config.get("DEEPSEEK_MODEL", DEFAULT_DEEPSEEK_MODEL)
+            or DEFAULT_DEEPSEEK_MODEL
+        )
+        api_key = config.get("DEEPSEEK_API_KEY", "")
+        if not api_key:
+            st.warning(
+                "AI tools are disabled. Add DEEPSEEK_API_KEY to Streamlit "
+                "Secrets and allow the app to restart."
+            )
+        else:
+            st.caption(
+                f"Model: {model}. Each request uses your DeepSeek API account. "
+                "AI output is never approved, scheduled, or published automatically."
+            )
+            generate_tab, translate_tab, review_tab = st.tabs(
+                ["Suggest sayings", "Translate text", "Review candidate"]
+            )
+            with generate_tab:
+                with st.form("deepseek_generate_form"):
+                    quantity = st.number_input(
+                        "Number of candidates",
+                        min_value=1,
+                        max_value=10,
+                        value=5,
+                    )
+                    themes = st.text_input(
+                        "Themes",
+                        value="time, learning, courage, friendship, self-knowledge",
+                    )
+                    sources = st.text_input(
+                        "Source preferences",
+                        value="Latin, Ancient Greek, and Classical Chinese",
+                    )
+                    generate = st.form_submit_button(
+                        "Ask DeepSeek for candidates",
+                        type="primary",
+                    )
+                if generate:
+                    try:
+                        with st.spinner("DeepSeek is preparing candidates..."):
+                            candidates, warnings = generate_deepseek_sayings(
+                                api_key,
+                                model,
+                                int(quantity),
+                                themes,
+                                sources,
+                            )
+                        added, duplicates = store.update(
+                            lambda current: stage_ai_candidates(
+                                current,
+                                candidates,
+                            )
+                        )
+                        message = (
+                            f"Staged {added} candidate(s); skipped "
+                            f"{duplicates} duplicate(s)."
+                        )
+                        if warnings:
+                            message += f" {len(warnings)} malformed candidate(s) were rejected."
+                        st.session_state["sayings_notice"] = message
+                        st.rerun()
+                    except DeepSeekError as exc:
+                        st.error(str(exc))
+
+            with translate_tab:
+                with st.form("deepseek_translate_form"):
+                    source_text = st.text_area(
+                        "Text to translate into Latin",
+                        max_chars=4000,
+                    )
+                    source_language = st.text_input(
+                        "Source language",
+                        value="English",
+                    )
+                    supplied_attribution = st.text_input(
+                        "Attribution",
+                        help=(
+                            "Use an accurate source. Leave blank to label the "
+                            "result as user-supplied text."
+                        ),
+                    )
+                    translate = st.form_submit_button(
+                        "Ask DeepSeek to translate",
+                        type="primary",
+                    )
+                if translate:
+                    try:
+                        with st.spinner("DeepSeek is translating..."):
+                            candidate = translate_with_deepseek(
+                                api_key,
+                                model,
+                                source_text,
+                                source_language,
+                                supplied_attribution,
+                            )
+                        added, duplicates = store.update(
+                            lambda current: stage_ai_candidates(
+                                current,
+                                [candidate],
+                            )
+                        )
+                        st.session_state["sayings_notice"] = (
+                            f"Staged {added} translation candidate(s); skipped "
+                            f"{duplicates} duplicate(s)."
+                        )
+                        st.rerun()
+                    except (DeepSeekError, ValueError) as exc:
+                        st.error(str(exc))
+
+            with review_tab:
+                candidates = state["ai_candidates"]
+                if not candidates:
+                    st.info("There are no staged AI candidates to review.")
+                else:
+                    labels = {
+                        item["id"]: (
+                            f"{item['latin']} — {item['attribution']}"
+                        )
+                        for item in candidates
+                    }
+                    selected_id = st.selectbox(
+                        "Candidate",
+                        options=list(labels),
+                        format_func=lambda value: labels[value],
+                    )
+                    if st.button("Ask DeepSeek to review this candidate"):
+                        selected = next(
+                            item
+                            for item in candidates
+                            if item["id"] == selected_id
+                        )
+                        try:
+                            with st.spinner("DeepSeek is reviewing..."):
+                                st.session_state["deepseek_review"] = (
+                                    review_with_deepseek(
+                                        api_key,
+                                        model,
+                                        selected,
+                                    )
+                                )
+                        except DeepSeekError as exc:
+                            st.error(str(exc))
+                    review = st.session_state.get("deepseek_review")
+                    if review:
+                        st.json(review)
+                        st.caption(
+                            "This is an AI assessment, not independent source verification."
+                        )
+
+        candidates = state["ai_candidates"]
+        st.subheader(f"Staged AI candidates ({len(candidates)})")
+        if candidates:
+            candidate_rows = []
+            for item in candidates:
+                candidate_rows.append(
+                    {
+                        "add": False,
+                        "id": item["id"],
+                        "latin": item["latin"],
+                        "translation": item["translation"],
+                        "attribution": item["attribution"],
+                        "latin_kind": item["latin_kind"],
+                        "source_language": item["source_language"],
+                        "source_text": item["source_text"],
+                        "note": item["note"],
+                    }
+                )
+            candidate_editor = st.data_editor(
+                pd.DataFrame(candidate_rows),
+                hide_index=True,
+                use_container_width=True,
+                column_config={
+                    "id": None,
+                    "add": st.column_config.CheckboxColumn(
+                        "add to library"
+                    ),
+                },
+                disabled=[
+                    "latin",
+                    "translation",
+                    "attribution",
+                    "latin_kind",
+                    "source_language",
+                    "source_text",
+                    "note",
+                ],
+                key=f"ai_candidate_editor_{state['revision']}",
+            )
+            left, right = st.columns(2)
+            if left.button("Add selected candidates as unapproved"):
+                selected_ids = set(
+                    candidate_editor.loc[
+                        candidate_editor["add"] == True, "id"  # noqa: E712
+                    ].tolist()
+                )
+                if not selected_ids:
+                    st.error("Select at least one candidate.")
+                else:
+
+                    def accept(current: dict[str, Any]) -> tuple[int, int]:
+                        selected = [
+                            item
+                            for item in current["ai_candidates"]
+                            if item["id"] in selected_ids
+                        ]
+                        result = add_unapproved_records(
+                            current,
+                            selected,
+                            "AI candidates added to the sayings library.",
+                        )
+                        current["ai_candidates"] = [
+                            item
+                            for item in current["ai_candidates"]
+                            if item["id"] not in selected_ids
+                        ]
+                        return result
+
+                    added, duplicates = store.update(accept)
+                    st.session_state["sayings_notice"] = (
+                        f"Added {added} unapproved candidate(s); skipped "
+                        f"{duplicates} duplicate(s)."
+                    )
+                    st.rerun()
+            confirm_clear = right.checkbox(
+                "Allow clearing all staged candidates",
+                key="confirm_clear_ai_candidates",
+            )
+            if right.button(
+                "Clear staged candidates",
+                disabled=not confirm_clear,
+            ):
+
+                def clear(current: dict[str, Any]) -> None:
+                    count = len(current["ai_candidates"])
+                    current["ai_candidates"] = []
+                    append_event(
+                        current,
+                        "warning",
+                        "Staged AI candidates cleared.",
+                        count=count,
+                    )
+
+                store.update(clear)
+                st.rerun()
+        else:
+            st.info("No AI candidates are currently staged.")
+
 
 def render_schedule(
     store: GitHubStateStore,
@@ -1203,6 +2425,24 @@ def render_schedule(
 ) -> None:
     st.header("Schedule")
     settings = state["settings"]
+    approved_count = sum(
+        bool(item.get("approved")) for item in state["sayings"]
+    )
+    active_unique = {
+        item["saying_id"]
+        for item in state["queue"]
+        if item["status"] in ("queued", "publishing")
+    }
+    st.caption(
+        f"{approved_count} approved saying(s); "
+        f"{len(active_unique)} unique saying(s) currently active in the queue."
+    )
+    if approved_count < 5:
+        st.warning(
+            "Approve more sayings before building a multi-week schedule. "
+            "The scheduler will not place duplicate copies of a saying in the "
+            "active queue."
+        )
     with st.form("schedule_settings"):
         left, right = st.columns(2)
         minimum = left.number_input(
@@ -1406,6 +2646,15 @@ def render_linkedin_setup(
         approved = [
             item for item in state["sayings"] if bool(item.get("approved"))
         ]
+        st.warning(
+            "This control creates a real LinkedIn post immediately and does "
+            "not observe dry-run mode."
+        )
+        if approved:
+            st.caption("Exact text that will be published")
+            st.code(format_post(approved[0]))
+        else:
+            st.info("Approve at least one saying to make a test available.")
         confirmed = st.checkbox(
             "I understand this immediately publishes the first approved "
             "saying to my LinkedIn connections."
@@ -1469,6 +2718,14 @@ def render_linkedin_setup(
         {
             "setting": "Encryption key",
             "ready": "yes" if config["FERNET_KEY"] else "no",
+        },
+        {
+            "setting": "DeepSeek AI (optional)",
+            "ready": (
+                f"yes — {config.get('DEEPSEEK_MODEL', DEFAULT_DEEPSEEK_MODEL)}"
+                if config.get("DEEPSEEK_API_KEY")
+                else "not configured"
+            ),
         },
     ]
     st.dataframe(pd.DataFrame(checks), hide_index=True, use_container_width=True)
@@ -1552,7 +2809,7 @@ def main() -> None:
     with dashboard:
         render_dashboard(store, state, worker, timezone_name)
     with sayings:
-        render_sayings(store, state)
+        render_sayings(store, state, config)
     with schedule:
         render_schedule(store, state, timezone_name)
     with linkedin:
