@@ -1,6 +1,6 @@
 {
   "schema_version": 4,
-  "revision": 20,
+  "revision": 21,
   "settings": {
     "automation_enabled": false,
     "dry_run": true,
@@ -1576,6 +1576,14 @@
     },
     {
       "at": "2026-07-27T20:51:01.244656+00:00",
+      "level": "info",
+      "message": "Sayings library updated.",
+      "details": {
+        "count": 65
+      }
+    },
+    {
+      "at": "2026-07-27T20:51:11.090651+00:00",
       "level": "info",
       "message": "Sayings library updated.",
       "details": {
