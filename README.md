@@ -37,7 +37,7 @@ Latin text
 
 English translation
 
-- attribution
+-attribution
 ```
 
 The application combines a curated library, optional DeepSeek editorial
