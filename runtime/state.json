@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "revision": 3,
+  "revision": 4,
   "settings": {
     "automation_enabled": false,
     "dry_run": true,
@@ -22,16 +22,13 @@
     "max_post_chars": 600
   },
   "linkedin": {
-    "connected": false,
-    "encrypted_access_token": "",
-    "expires_at": "",
-    "person_id": "",
-    "display_name": ""
+    "connected": true,
+    "encrypted_access_token": "gAAAAABqZvACGrGlqZVOrCLdm4MehKWQvR8uYWRuvao6fnD_q27g9N5lSIynFYTCgpI2MSwFSjQEkqFoUSumZUXUC-CcONSuzuDkj3V3E0gx1te_fXpyw6nzWbDG-Dzs8QpOKiPps-pbaEsRKUWR7dT6UCyzFX8BsgH44Qa8DIwGPfrzGZtRRnW2eohHwPzexsJ3XCGFS3CL1vAl7l3Hpk6_C9NR9XTbLUwsDGR5A2OJEtv3mCHc6jsOrfFTV1OX--U1_JjkV-wqYILS-32pC0g-Q7E2wJeGs96s1oREUr9i_oqo5IRBfnElV5bQlJq5BZBT6c3ILpS8h4c54HdbRwfDfvOU9A-zU-bLzU9BWZwtrKSqPQHduhGb8_dXWtXkKMcwebtt7tKpTVZbBDJtdv7xzAvnbNVD0jRJ8edTEgHkyBg0ayNW3Sg6QCnLNH17qncNnQddH96jgsPtyo3H29YJHnxUM0IYFFIVhmE2fbGizejFQDzIPhjZvec-y2Px28wcHz1rOAvZSWnUsuF0P78EkceQ9ll3Pg==",
+    "expires_at": "2026-09-25T05:43:29.357464+00:00",
+    "person_id": "MzTNsDv_As",
+    "display_name": "omar akhtar"
   },
-  "oauth": {
-    "state_hash": "a8b19abf89b34a128eb54aaaa5f60676e2f30adbc8421d20d14514879a86ad35",
-    "expires_at": "2026-07-27T05:53:05.460476+00:00"
-  },
+  "oauth": {},
   "sayings": [
     {
       "id": "seneca-ep-1",
@@ -153,5 +150,11 @@
   ],
   "queue": [],
   "history": [],
-  "events": []
+  "events": [
+    {
+      "at": "2026-07-27T05:43:30.597225+00:00",
+      "level": "info",
+      "message": "LinkedIn account connected."
+    }
+  ]
 }
