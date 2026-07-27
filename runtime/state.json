@@ -1,6 +1,6 @@
 {
   "schema_version": 4,
-  "revision": 16,
+  "revision": 17,
   "settings": {
     "automation_enabled": false,
     "dry_run": true,
@@ -49,8 +49,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "horace-odes-1-11",
@@ -71,8 +70,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "terence-heauton-77",
@@ -93,8 +91,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "virgil-aeneid-1-203",
@@ -115,8 +112,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "ovid-remedia-91",
@@ -137,8 +133,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "cicero-officiis-1-22",
@@ -159,8 +154,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "epictetus-ench-1",
@@ -181,8 +175,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "marcus-aurelius-4-3",
@@ -203,8 +196,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "confucius-analects-15-24",
@@ -225,8 +217,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "laozi-daodejing-33",
@@ -247,8 +238,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "seneca-ep-1-3",
@@ -269,8 +259,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "seneca-ep-6-5",
@@ -291,8 +280,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "seneca-ep-71-3",
@@ -313,8 +301,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "seneca-ep-96-5",
@@ -335,8 +322,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "seneca-ep-106-12",
@@ -357,8 +343,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "seneca-hercules-437",
@@ -379,8 +364,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "horace-odes-1-37",
@@ -401,8 +385,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "horace-odes-3-30",
@@ -423,8 +406,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "horace-odes-4-7",
@@ -445,8 +427,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "horace-ep-1-2-40a",
@@ -467,8 +448,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "horace-ep-1-2-40b",
@@ -489,8 +469,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "horace-ep-1-2-62",
@@ -511,8 +490,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "horace-ep-1-11-27",
@@ -533,8 +511,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "horace-satires-1-1-106",
@@ -555,8 +532,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "horace-ars-25",
@@ -577,8 +553,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "horace-ars-343",
@@ -599,8 +574,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "horace-ars-361",
@@ -621,8 +595,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "terence-andria-68",
@@ -643,8 +616,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "terence-phormio-203",
@@ -665,8 +637,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "terence-phormio-454",
@@ -687,8 +658,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "terence-eunuchus-41",
@@ -709,8 +679,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "virgil-aeneid-2-49",
@@ -731,8 +700,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "virgil-aeneid-2-65",
@@ -753,8 +721,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "virgil-aeneid-2-354",
@@ -775,8 +742,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "virgil-aeneid-5-231",
@@ -797,8 +763,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "virgil-aeneid-6-126",
@@ -819,8 +784,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "virgil-aeneid-6-727",
@@ -841,8 +805,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "virgil-aeneid-10-284",
@@ -863,8 +826,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "virgil-eclogues-2-65",
@@ -885,8 +847,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "virgil-georgics-1-145",
@@ -907,8 +868,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "virgil-georgics-3-284",
@@ -929,8 +889,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "ovid-met-4-428",
@@ -951,8 +910,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "ovid-met-7-20",
@@ -973,8 +931,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "ovid-met-15-234",
@@ -995,8 +952,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "ovid-ex-ponto-4-10",
@@ -1017,8 +973,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "cicero-officiis-1-33",
@@ -1039,8 +994,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "cicero-pro-milone-11",
@@ -1061,8 +1015,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "cicero-pro-cluentio-146",
@@ -1083,8 +1036,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "cicero-de-legibus-3-8",
@@ -1105,8 +1057,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "cicero-in-catilinam-1-2",
@@ -1127,8 +1078,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "cicero-orator-120",
@@ -1149,8 +1099,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "ennius-amicus-certus",
@@ -1171,8 +1120,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "sallust-jugurtha-10-6",
@@ -1193,8 +1141,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "tacitus-annals-1-1",
@@ -1215,8 +1162,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "tacitus-annals-3-27",
@@ -1237,8 +1183,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "tacitus-agricola-30a",
@@ -1259,8 +1204,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "tacitus-agricola-30b",
@@ -1281,8 +1225,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "juvenal-satire-6-347",
@@ -1303,8 +1246,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "juvenal-satire-10-81",
@@ -1325,8 +1267,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "juvenal-satire-10-356",
@@ -1347,8 +1288,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "martial-epigrams-6-70",
@@ -1369,8 +1309,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "catullus-85",
@@ -1391,8 +1330,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "pliny-nh-35-84",
@@ -1413,8 +1351,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "suetonius-caesar-32",
@@ -1435,8 +1372,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     },
     {
       "id": "suetonius-caesar-37",
@@ -1457,8 +1393,7 @@
       "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
-      "duplicate_warning": "",
-      "policy_warning": ""
+      "duplicate_warning": ""
     }
   ],
   "queue": [],
@@ -1548,6 +1483,14 @@
       "message": "Sayings library updated.",
       "details": {
         "count": 65
+      }
+    },
+    {
+      "at": "2026-07-27T20:41:14.417802+00:00",
+      "level": "info",
+      "message": "Connections-only test post published.",
+      "details": {
+        "post_id": "urn:li:share:7487608057770979328"
       }
     }
   ],
