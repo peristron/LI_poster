@@ -1,8 +1,8 @@
 {
   "schema_version": 4,
-  "revision": 32,
+  "revision": 33,
   "settings": {
-    "automation_enabled": true,
+    "automation_enabled": false,
     "dry_run": false,
     "posts_per_week_min": 1,
     "posts_per_week_max": 1,
@@ -1705,6 +1705,11 @@
       "details": {
         "queue_id": "543926d5-f322-496f-a332-3e6253c94b79"
       }
+    },
+    {
+      "at": "2026-07-27T22:21:30.988425+00:00",
+      "level": "warning",
+      "message": "Automation paused."
     }
   ],
   "ai_candidates": [
