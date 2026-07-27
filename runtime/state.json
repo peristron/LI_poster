@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "revision": 7,
+  "revision": 8,
   "settings": {
     "automation_enabled": false,
     "dry_run": true,
@@ -891,7 +891,82 @@
       "details": {
         "count": 13
       }
+    },
+    {
+      "at": "2026-07-27T16:09:57.534426+00:00",
+      "level": "info",
+      "message": "DeepSeek candidates staged for human review.",
+      "details": {
+        "added": 5,
+        "duplicates_skipped": 0
+      }
     }
   ],
-  "ai_candidates": []
+  "ai_candidates": [
+    {
+      "id": "ai-8822650078a6bd40",
+      "approved": false,
+      "latin": "Carpe diem",
+      "translation": "Seize the day",
+      "attribution": "Horace, Odes 1.11.8",
+      "latin_kind": "original Latin",
+      "source_language": "Latin",
+      "source_text": "Carpe diem",
+      "origin": "DeepSeek suggestion (deepseek-v4-flash)",
+      "verification_status": "AI candidate; human verification required",
+      "note": ""
+    },
+    {
+      "id": "ai-e8d96bd12bd58c63",
+      "approved": false,
+      "latin": "Aude sapere",
+      "translation": "Dare to know",
+      "attribution": "Horace, Epistles 1.2.40",
+      "latin_kind": "original Latin",
+      "source_language": "Latin",
+      "source_text": "Aude sapere",
+      "origin": "DeepSeek suggestion (deepseek-v4-flash)",
+      "verification_status": "AI candidate; human verification required",
+      "note": "sometimes translated as 'Dare to be wise'"
+    },
+    {
+      "id": "ai-27094f79c8c6bb4d",
+      "approved": false,
+      "latin": "Nosce te ipsum",
+      "translation": "Know thyself",
+      "attribution": "Inscribed at the Temple of Apollo at Delphi, attributed to various sages",
+      "latin_kind": "modern Latin rendering from Ancient Greek",
+      "source_language": "Ancient Greek",
+      "source_text": "Γνῶθι σεαυτόν",
+      "origin": "DeepSeek suggestion (deepseek-v4-flash)",
+      "verification_status": "AI candidate; human verification required",
+      "note": "exact original unattributed"
+    },
+    {
+      "id": "ai-c2cb1b80d0ae36dc",
+      "approved": false,
+      "latin": "Discere et exercere nonne delectat?",
+      "translation": "Is it not a pleasure to learn and practice?",
+      "attribution": "Confucius, Analects 1.1 (based on translation)",
+      "latin_kind": "modern Latin rendering from Classical Chinese",
+      "source_language": "Classical Chinese",
+      "source_text": "学而时习之，不亦说乎",
+      "origin": "DeepSeek suggestion (deepseek-v4-flash)",
+      "verification_status": "AI candidate; human verification required",
+      "note": "rendering from common translation"
+    },
+    {
+      "id": "ai-018c35203904e20b",
+      "approved": false,
+      "latin": "Amicus est alter ipse",
+      "translation": "A friend is a second self",
+      "attribution": "Aristotle, Nicomachean Ethics 1166a31",
+      "latin_kind": "modern Latin rendering from Ancient Greek",
+      "source_language": "Ancient Greek",
+      "source_text": "ὁ φίλος ἄλλος αὐτός",
+      "origin": "DeepSeek suggestion (deepseek-v4-flash)",
+      "verification_status": "AI candidate; human verification required",
+      "note": "exact wording debatable"
+    }
+  ]
 }
