@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "revision": 4,
+  "revision": 5,
   "settings": {
     "automation_enabled": false,
     "dry_run": true,
@@ -31,121 +31,121 @@
   "oauth": {},
   "sayings": [
     {
-      "id": "seneca-ep-1",
-      "approved": false,
+      "approved": true,
       "latin": "Dum differtur, vita transcurrit.",
       "translation": "While it is postponed, life passes by.",
       "attribution": "Seneca, Epistulae Morales 1.2",
       "latin_kind": "original Latin",
-      "note": ""
+      "note": "",
+      "id": "seneca-ep-1"
     },
     {
-      "id": "horace-odes-1-11",
       "approved": false,
       "latin": "Carpe diem, quam minimum credula postero.",
       "translation": "Seize the day, trusting as little as possible in tomorrow.",
       "attribution": "Horace, Odes 1.11",
       "latin_kind": "original Latin",
-      "note": ""
+      "note": "",
+      "id": "horace-odes-1-11"
     },
     {
-      "id": "terence-heauton-77",
       "approved": false,
       "latin": "Homo sum: humani nihil a me alienum puto.",
       "translation": "I am human; I consider nothing human alien to me.",
       "attribution": "Terence, Heauton Timorumenos 77",
       "latin_kind": "original Latin",
-      "note": ""
+      "note": "",
+      "id": "terence-heauton-77"
     },
     {
-      "id": "virgil-aeneid-1-203",
       "approved": false,
       "latin": "Forsan et haec olim meminisse iuvabit.",
       "translation": "Perhaps one day it will please us to remember even these things.",
       "attribution": "Virgil, Aeneid 1.203",
       "latin_kind": "original Latin",
-      "note": ""
+      "note": "",
+      "id": "virgil-aeneid-1-203"
     },
     {
-      "id": "ovid-remedia-91",
       "approved": false,
       "latin": "Principiis obsta; sero medicina paratur.",
       "translation": "Resist beginnings; a remedy is prepared too late.",
       "attribution": "Ovid, Remedia Amoris 91",
       "latin_kind": "original Latin",
-      "note": ""
+      "note": "",
+      "id": "ovid-remedia-91"
     },
     {
-      "id": "cicero-officiis-1-22",
       "approved": false,
       "latin": "Non nobis solum nati sumus.",
       "translation": "We are not born for ourselves alone.",
       "attribution": "Cicero, De Officiis 1.22",
       "latin_kind": "original Latin",
-      "note": ""
+      "note": "",
+      "id": "cicero-officiis-1-22"
     },
     {
-      "id": "augustine-conf-1-1",
       "approved": false,
       "latin": "Inquietum est cor nostrum, donec requiescat in te.",
       "translation": "Our heart is restless until it rests in you.",
       "attribution": "Augustine, Confessiones 1.1",
       "latin_kind": "original Latin",
-      "note": ""
+      "note": "",
+      "id": "augustine-conf-1-1"
     },
     {
-      "id": "ecclesiastes-3-1",
       "approved": false,
       "latin": "Omnia tempus habent.",
       "translation": "For everything there is a season.",
       "attribution": "Ecclesiastes 3:1, Vulgate",
       "latin_kind": "Vulgate Latin",
-      "note": ""
+      "note": "",
+      "id": "ecclesiastes-3-1"
     },
     {
-      "id": "epictetus-ench-1",
       "approved": false,
       "latin": "Alia in potestate nostra sunt, alia non sunt.",
       "translation": "Some things are within our power; others are not.",
       "attribution": "Epictetus, Enchiridion 1",
       "latin_kind": "modern Latin rendering from Greek",
-      "note": "Latin rendering; compare the Greek original before approval."
+      "note": "Latin rendering; compare the Greek original before approval.",
+      "id": "epictetus-ench-1"
     },
     {
-      "id": "marcus-aurelius-4-3",
       "approved": false,
       "latin": "Intra te ipsum recede.",
       "translation": "Withdraw into yourself.",
       "attribution": "Marcus Aurelius, Meditations 4.3",
       "latin_kind": "modern Latin rendering from Greek",
-      "note": "Latin rendering; compare the Greek original before approval."
+      "note": "Latin rendering; compare the Greek original before approval.",
+      "id": "marcus-aurelius-4-3"
     },
     {
-      "id": "confucius-analects-15-24",
       "approved": false,
       "latin": "Quod tibi fieri non vis, alteri ne feceris.",
       "translation": "What you do not wish for yourself, do not do to another.",
       "attribution": "Confucius, Analects 15.24",
       "latin_kind": "modern Latin rendering from Classical Chinese",
-      "note": "Latin rendering; compare the Classical Chinese original before approval."
+      "note": "Latin rendering; compare the Classical Chinese original before approval.",
+      "id": "confucius-analects-15-24"
     },
     {
-      "id": "laozi-daodejing-33",
       "approved": false,
       "latin": "Qui alios novit sapiens est; qui se ipsum novit illuminatus est.",
       "translation": "One who knows others is wise; one who knows oneself is enlightened.",
       "attribution": "Laozi, Daodejing 33",
       "latin_kind": "modern Latin rendering from Classical Chinese",
-      "note": "Latin rendering; compare the Classical Chinese original before approval."
+      "note": "Latin rendering; compare the Classical Chinese original before approval.",
+      "id": "laozi-daodejing-33"
     },
     {
-      "id": "dhammapada-1-5",
       "approved": false,
       "latin": "Odium odio numquam sedatur; non odio sedatur.",
       "translation": "Hatred is never appeased by hatred; it is appeased by non-hatred.",
       "attribution": "Dhammapada 1.5",
       "latin_kind": "modern Latin rendering from Pali",
-      "note": "Latin rendering; compare the Pali original before approval."
+      "note": "Latin rendering; compare the Pali original before approval.",
+      "id": "dhammapada-1-5"
     }
   ],
   "queue": [],
@@ -155,6 +155,14 @@
       "at": "2026-07-27T05:43:30.597225+00:00",
       "level": "info",
       "message": "LinkedIn account connected."
+    },
+    {
+      "at": "2026-07-27T05:47:22.442955+00:00",
+      "level": "info",
+      "message": "Sayings library updated.",
+      "details": {
+        "count": 13
+      }
     }
   ]
 }
