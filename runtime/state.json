@@ -1,23 +1,19 @@
 {
   "schema_version": 4,
-  "revision": 26,
+  "revision": 27,
   "settings": {
     "automation_enabled": false,
-    "dry_run": false,
-    "posts_per_week_min": 2,
-    "posts_per_week_max": 3,
+    "dry_run": true,
+    "posts_per_week_min": 1,
+    "posts_per_week_max": 1,
     "allowed_weekdays": [
-      0,
-      1,
-      2,
-      3,
-      4
+      0
     ],
-    "earliest_time": "08:30",
-    "latest_time": "18:30",
+    "earliest_time": "17:15",
+    "latest_time": "17:30",
     "min_spacing_hours": 18,
-    "schedule_horizon_days": 21,
-    "visibility": "PUBLIC",
+    "schedule_horizon_days": 7,
+    "visibility": "CONNECTIONS",
     "recent_saying_window": 20,
     "max_post_chars": 600
   },
@@ -1581,6 +1577,11 @@
       "details": {
         "count": 0
       }
+    },
+    {
+      "at": "2026-07-27T21:02:26.413178+00:00",
+      "level": "info",
+      "message": "Schedule settings updated."
     }
   ],
   "ai_candidates": [
