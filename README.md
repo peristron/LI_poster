@@ -15,9 +15,9 @@ Streamlit application without treating AI generation as source verification.
 [![GitHub issues](https://img.shields.io/github/issues/peristron/LI_poster)](https://github.com/peristron/LI_poster/issues)
 [![GitHub pull requests](https://img.shields.io/github/issues-pr/peristron/LI_poster)](https://github.com/peristron/LI_poster/pulls)
 
-[Overview](#overview) Â· [Capabilities](#capabilities) Â·
-[Deployment](#deployment-and-integration) Â· [Using the app](#recommended-workflow) Â·
-[AI safeguards](#deepseek-ai-and-source-verification) Â·
+[Overview](#overview) · [Capabilities](#capabilities) ·
+[Deployment](#deployment-and-integration) · [Using the app](#recommended-workflow) ·
+[AI safeguards](#deepseek-ai-and-source-verification) ·
 [Troubleshooting](#troubleshooting)
 
 </div>
