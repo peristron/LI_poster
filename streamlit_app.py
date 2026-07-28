@@ -1,4 +1,4 @@
-"""li_poster 1.4.0: a self-contained Streamlit LinkedIn scheduler."""
+"""li_poster 2.0.0: a reviewed, multi-collection LinkedIn scheduler."""
 
 from __future__ import annotations
 
@@ -36,7 +36,7 @@ st.set_page_config(
 # ---------------------------------------------------------------------------
 
 APP_NAME = "li_poster"
-APP_VERSION = "1.4.0"
+APP_VERSION = "2.0.0"
 GITHUB_API = "https://api.github.com"
 LINKEDIN_AUTHORIZE_URL = "https://www.linkedin.com/oauth/v2/authorization"
 LINKEDIN_TOKEN_URL = "https://www.linkedin.com/oauth/v2/accessToken"
@@ -54,7 +54,16 @@ MAX_METADATA_BACKFILL = 10
 WORKER_INTERVAL_SECONDS = 45
 WORKER_STALE_AFTER_SECONDS = 120
 STATE_VERIFY_ATTEMPTS = 5
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
+COLLECTION_LATIN = "latin_sayings"
+COLLECTION_PHYSICS = "physics_facts"
+COLLECTION_HISTORY = "history_facts"
+COLLECTION_LABELS = {
+    COLLECTION_LATIN: "Latin sayings",
+    COLLECTION_PHYSICS: "Physics facts",
+    COLLECTION_HISTORY: "History facts",
+}
+COLLECTION_KEYS = list(COLLECTION_LABELS)
 SOURCE_MODE_REQUIRED = "One required source language"
 SOURCE_MODE_BALANCED = "Balanced coverage across preferred languages"
 SOURCE_MODE_PREFERENCES = "Preferred languages only"
@@ -76,9 +85,17 @@ WEEKDAYS = [
 
 SAYING_FIELDS = [
     "approved",
+    "collection",
+    "lead",
+    "body",
     "latin",
     "translation",
     "attribution",
+    "source_title",
+    "source_url",
+    "source_type",
+    "tags",
+    "verified_at",
     "latin_kind",
     "primary_theme",
     "source_language",
@@ -107,9 +124,17 @@ def seed_saying(
     return {
         "id": saying_id,
         "approved": False,
+        "collection": COLLECTION_LATIN,
+        "lead": "",
+        "body": "",
         "latin": latin,
         "translation": translation,
         "attribution": attribution,
+        "source_title": attribution,
+        "source_url": "",
+        "source_type": "primary text",
+        "tags": primary_theme,
+        "verified_at": "",
         "latin_kind": latin_kind,
         "primary_theme": primary_theme,
         "source_language": source_language,
@@ -119,6 +144,44 @@ def seed_saying(
         "origin": "bundled curated library",
         "verification_status": "review source before approval",
         "note": note,
+    }
+
+
+def seed_fact(
+    item_id: str,
+    collection: str,
+    lead: str,
+    body: str,
+    attribution: str,
+    source_title: str,
+    source_url: str,
+    primary_theme: str,
+    source_period: str,
+) -> dict[str, Any]:
+    """Build an unapproved, source-led starter fact."""
+    return {
+        "id": item_id,
+        "approved": False,
+        "collection": collection,
+        "lead": lead,
+        "body": body,
+        "latin": "",
+        "translation": "",
+        "attribution": attribution,
+        "source_title": source_title,
+        "source_url": source_url,
+        "source_type": "authoritative reference",
+        "tags": primary_theme,
+        "verified_at": "",
+        "latin_kind": "",
+        "primary_theme": primary_theme,
+        "source_language": "English",
+        "source_period": source_period,
+        "source_confidence": "starter record; verify source",
+        "source_text": "",
+        "origin": "bundled starter library",
+        "verification_status": "review source before approval",
+        "note": "Verify the wording and linked source before approval.",
     }
 
 
@@ -534,6 +597,187 @@ SEED_SAYINGS: list[dict[str, Any]] = [
     ),
 ]
 
+SEED_FACTS: list[dict[str, Any]] = [
+    seed_fact(
+        "physics-speed-of-light",
+        COLLECTION_PHYSICS,
+        "The speed of light in vacuum is exactly 299,792,458 metres per second.",
+        "The metre is defined by fixing this value of the speed of light.",
+        "BIPM, The International System of Units (SI Brochure)",
+        "The International System of Units (SI Brochure)",
+        "https://www.bipm.org/en/publications/si-brochure",
+        "measurement",
+        "modern physics",
+    ),
+    seed_fact(
+        "physics-gravitational-waves",
+        COLLECTION_PHYSICS,
+        "Gravitational waves were directly detected for the first time in 2015.",
+        "LIGO observed waves from two merging black holes; the result was announced in 2016.",
+        "LIGO Laboratory, GW150914",
+        "Gravitational Waves Detected 100 Years After Einstein's Prediction",
+        "https://www.ligo.caltech.edu/news/ligo20160211",
+        "gravitation",
+        "2015 CE",
+    ),
+    seed_fact(
+        "physics-atom-mostly-space",
+        COLLECTION_PHYSICS,
+        "An atom's nucleus occupies only a tiny fraction of the atom's volume.",
+        "Most of the atom's spatial extent is the region described by its electron cloud.",
+        "U.S. Department of Energy, Office of Science",
+        "DOE Explains...Nuclei",
+        "https://www.energy.gov/science/doe-explainsnuclei",
+        "atomic physics",
+        "modern physics",
+    ),
+    seed_fact(
+        "physics-electromagnetic-spectrum",
+        COLLECTION_PHYSICS,
+        "Radio waves, visible light, and X-rays are all electromagnetic radiation.",
+        "They differ in wavelength, frequency, and energy, but all belong to the same spectrum.",
+        "NASA Science, Electromagnetic Spectrum",
+        "The Electromagnetic Spectrum",
+        "https://science.nasa.gov/ems/",
+        "electromagnetism",
+        "modern physics",
+    ),
+    seed_fact(
+        "physics-standard-model",
+        COLLECTION_PHYSICS,
+        "The Standard Model describes three fundamental interactions, but not gravity.",
+        "It organizes known elementary particles and the electromagnetic, weak, and strong interactions.",
+        "CERN, The Standard Model",
+        "The Standard Model",
+        "https://home.cern/science/physics/standard-model",
+        "particle physics",
+        "modern physics",
+    ),
+    seed_fact(
+        "physics-absolute-zero",
+        COLLECTION_PHYSICS,
+        "Absolute zero is 0 kelvin, equal to −273.15 degrees Celsius.",
+        "It is the zero point of the thermodynamic temperature scale.",
+        "BIPM, SI Brochure",
+        "The International System of Units (SI Brochure)",
+        "https://www.bipm.org/en/publications/si-brochure",
+        "thermodynamics",
+        "modern physics",
+    ),
+    seed_fact(
+        "physics-mass-energy",
+        COLLECTION_PHYSICS,
+        "Mass and energy are related by Einstein's equation E = mc².",
+        "The relation shows that a body's mass corresponds to an amount of energy even when the body is at rest.",
+        "NIST, CODATA and fundamental constants",
+        "Fundamental Physical Constants",
+        "https://physics.nist.gov/cuu/Constants/",
+        "relativity",
+        "20th century CE",
+    ),
+    seed_fact(
+        "physics-neutrinos",
+        COLLECTION_PHYSICS,
+        "Neutrinos interact so weakly that enormous numbers pass through matter unnoticed.",
+        "They are elementary particles with very small masses and no electric charge.",
+        "Fermilab, All About Neutrinos",
+        "All About Neutrinos",
+        "https://neutrinos.fnal.gov/",
+        "particle physics",
+        "modern physics",
+    ),
+    seed_fact(
+        "history-rosetta-stone",
+        COLLECTION_HISTORY,
+        "The Rosetta Stone carries one decree in three writing systems.",
+        "Its Greek, Demotic, and hieroglyphic texts became central to deciphering Egyptian hieroglyphs.",
+        "The British Museum, The Rosetta Stone",
+        "The Rosetta Stone",
+        "https://www.britishmuseum.org/collection/object/Y_EA24",
+        "writing and language",
+        "196 BCE",
+    ),
+    seed_fact(
+        "history-magna-carta",
+        COLLECTION_HISTORY,
+        "Magna Carta was first issued in June 1215.",
+        "Although many clauses addressed medieval disputes, later generations treated it as an important symbol of lawful government.",
+        "UK Parliament, Magna Carta",
+        "Magna Carta",
+        "https://www.parliament.uk/magnacarta/",
+        "law",
+        "1215 CE",
+    ),
+    seed_fact(
+        "history-apollo-11",
+        COLLECTION_HISTORY,
+        "Apollo 11 landed humans on the Moon in July 1969.",
+        "Neil Armstrong and Buzz Aldrin walked on the lunar surface while Michael Collins remained in lunar orbit.",
+        "NASA, Apollo 11 Mission Overview",
+        "Apollo 11 Mission Overview",
+        "https://www.nasa.gov/mission/apollo-11/",
+        "spaceflight",
+        "1969 CE",
+    ),
+    seed_fact(
+        "history-transcontinental-railroad",
+        COLLECTION_HISTORY,
+        "The first U.S. transcontinental railroad was joined at Promontory Summit in 1869.",
+        "The ceremonial meeting connected the Union Pacific and Central Pacific railroads.",
+        "U.S. National Park Service, Golden Spike",
+        "Golden Spike National Historical Park",
+        "https://www.nps.gov/gosp/learn/historyculture/index.htm",
+        "transport",
+        "1869 CE",
+    ),
+    seed_fact(
+        "history-gutenberg-bible",
+        COLLECTION_HISTORY,
+        "The Gutenberg Bible was printed in Mainz in the mid-fifteenth century.",
+        "It is a landmark of European printing with movable metal type.",
+        "Library of Congress, Gutenberg Bible",
+        "The Gutenberg Bible",
+        "https://www.loc.gov/exhibits/bibles/the-gutenberg-bible.html",
+        "printing",
+        "15th century CE",
+    ),
+    seed_fact(
+        "history-decimal-classification",
+        COLLECTION_HISTORY,
+        "The Dewey Decimal Classification was first published in 1876.",
+        "Its numbered hierarchy became a widely used system for organizing library collections.",
+        "Library of Congress, Dewey Decimal Classification",
+        "Dewey Decimal Classification",
+        "https://www.loc.gov/aba/publications/FreeDDC/freedoc.html",
+        "libraries",
+        "1876 CE",
+    ),
+    seed_fact(
+        "history-code-talkers",
+        COLLECTION_HISTORY,
+        "Navajo Code Talkers used their language to create a military communications code during World War II.",
+        "The code was used by the U.S. Marine Corps in the Pacific and was never broken in combat.",
+        "U.S. National Archives, Navajo Code Talkers",
+        "Navajo Code Talkers and the Unbreakable Code",
+        "https://www.archives.gov/education/lessons/code-talkers",
+        "communications",
+        "World War II",
+    ),
+    seed_fact(
+        "history-antarctic-treaty",
+        COLLECTION_HISTORY,
+        "The Antarctic Treaty was signed in 1959 and entered into force in 1961.",
+        "It reserves Antarctica for peaceful purposes and supports freedom of scientific investigation.",
+        "Antarctic Treaty Secretariat",
+        "The Antarctic Treaty",
+        "https://www.ats.aq/e/antarctictreaty.html",
+        "international cooperation",
+        "1959–1961 CE",
+    ),
+]
+
+ALL_SEED_CONTENT = [*SEED_SAYINGS, *SEED_FACTS]
+
 # These religious starter entries existed in v1.0.0. Migration removes them
 # from the active library without disturbing OAuth, settings, queue, or history.
 RETIRED_SEED_IDS = {
@@ -595,9 +839,16 @@ def normalize_bool(value: Any) -> bool:
 
 
 def saying_fingerprint(record: dict[str, Any]) -> str:
+    collection = canonical_collection(record.get("collection"))
+    primary_text = (
+        record.get("latin")
+        if collection == COLLECTION_LATIN
+        else record.get("lead")
+    )
     basis = "|".join(
         [
-            normalize_space(record.get("latin")).casefold(),
+            collection,
+            normalize_space(primary_text).casefold(),
             normalize_space(record.get("attribution")).casefold(),
         ]
     )
@@ -652,6 +903,30 @@ def canonical_language(value: Any) -> str:
     return normalize_space(value)
 
 
+def canonical_collection(value: Any) -> str:
+    key = normalize_space(value).casefold().replace("-", "_").replace(" ", "_")
+    aliases = {
+        "latin": COLLECTION_LATIN,
+        "latin_saying": COLLECTION_LATIN,
+        "latin_sayings": COLLECTION_LATIN,
+        "physics": COLLECTION_PHYSICS,
+        "physics_fact": COLLECTION_PHYSICS,
+        "physics_facts": COLLECTION_PHYSICS,
+        "history": COLLECTION_HISTORY,
+        "history_fact": COLLECTION_HISTORY,
+        "history_facts": COLLECTION_HISTORY,
+    }
+    return aliases.get(key, COLLECTION_LATIN)
+
+
+def content_lead(record: dict[str, Any]) -> str:
+    return normalize_space(
+        record.get("latin")
+        if canonical_collection(record.get("collection")) == COLLECTION_LATIN
+        else record.get("lead")
+    )
+
+
 RELIGIOUS_LANGUAGE_PATTERNS: tuple[tuple[str, str], ...] = (
     (r"\b(god|gods|goddess|deity|divine|prayer|scripture|theology)\b", "English religious language"),
     (r"\b(religion|religious|sacred|holy|worship|salvation|prophet)\b", "English religious language"),
@@ -664,7 +939,14 @@ def religious_language_hits(record: dict[str, Any]) -> list[str]:
     hits: list[str] = []
     # Scan only material that can appear in the post or substantiate it.
     # Internal notes may legitimately discuss why wording needs review.
-    for field in ("latin", "translation", "attribution", "source_text"):
+    for field in (
+        "lead",
+        "body",
+        "latin",
+        "translation",
+        "attribution",
+        "source_text",
+    ):
         text = normalize_space(record.get(field)).casefold()
         for pattern, label in RELIGIOUS_LANGUAGE_PATTERNS:
             for match in re.finditer(pattern, text, flags=re.IGNORECASE):
@@ -678,14 +960,27 @@ def near_duplicate_match(
     candidate: dict[str, Any],
     existing_records: list[dict[str, Any]],
 ) -> tuple[dict[str, Any], str] | None:
-    candidate_key = latin_search_key(candidate.get("latin"))
+    collection = canonical_collection(candidate.get("collection"))
+    candidate_text = (
+        candidate.get("latin")
+        if collection == COLLECTION_LATIN
+        else candidate.get("lead")
+    )
+    candidate_key = latin_search_key(candidate_text)
     candidate_tokens = candidate_key.split()
     if not candidate_tokens:
         return None
     candidate_set = set(candidate_tokens)
     candidate_author = attribution_author(candidate.get("attribution"))
     for existing in existing_records:
-        existing_key = latin_search_key(existing.get("latin"))
+        if canonical_collection(existing.get("collection")) != collection:
+            continue
+        existing_text = (
+            existing.get("latin")
+            if collection == COLLECTION_LATIN
+            else existing.get("lead")
+        )
+        existing_key = latin_search_key(existing_text)
         existing_tokens = existing_key.split()
         if not existing_tokens:
             continue
@@ -739,14 +1034,35 @@ def normalize_saying(
     *,
     default_origin: str = "manual entry",
 ) -> dict[str, Any]:
+    collection = canonical_collection(record.get("collection"))
+    lead = normalize_space(record.get("lead"))
+    body = normalize_space(record.get("body"))
+    latin = normalize_space(record.get("latin"))
+    translation = normalize_space(record.get("translation"))
+    if collection != COLLECTION_LATIN:
+        lead = lead or latin
+        body = body or translation
+        latin = ""
+        translation = ""
     normalized = {
         "id": normalize_space(record.get("id")) or secrets.token_hex(8),
         "approved": normalize_bool(record.get("approved", False)),
-        "latin": normalize_space(record.get("latin")),
-        "translation": normalize_space(record.get("translation")),
+        "collection": collection,
+        "lead": lead,
+        "body": body,
+        "latin": latin,
+        "translation": translation,
         "attribution": normalize_space(record.get("attribution")),
+        "source_title": normalize_space(record.get("source_title"))
+        or normalize_space(record.get("attribution")),
+        "source_url": normalize_space(record.get("source_url")),
+        "source_type": normalize_space(record.get("source_type"))
+        or ("primary text" if collection == COLLECTION_LATIN else "reference"),
+        "tags": normalize_space(record.get("tags"))
+        or normalize_space(record.get("primary_theme")),
+        "verified_at": normalize_space(record.get("verified_at")),
         "latin_kind": normalize_space(record.get("latin_kind"))
-        or "modern Latin rendering",
+        or ("modern Latin rendering" if collection == COLLECTION_LATIN else ""),
         "primary_theme": normalize_space(record.get("primary_theme")),
         "source_language": normalize_space(record.get("source_language"))
         or "unknown",
@@ -784,7 +1100,7 @@ def normalize_saying(
 
 
 def merge_curated_library(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    seed_by_id = {seed["id"]: seed for seed in SEED_SAYINGS}
+    seed_by_id = {seed["id"]: seed for seed in ALL_SEED_CONTENT}
     active: list[dict[str, Any]] = []
     for raw in records:
         if str(raw.get("id", "")) in RETIRED_SEED_IDS:
@@ -844,7 +1160,7 @@ def merge_curated_library(records: list[dict[str, Any]]) -> list[dict[str, Any]]
         active.append(record)
     ids = {record["id"] for record in active}
     fingerprints = {saying_fingerprint(record) for record in active}
-    for seed in SEED_SAYINGS:
+    for seed in ALL_SEED_CONTENT:
         fingerprint = saying_fingerprint(seed)
         if seed["id"] in ids or fingerprint in fingerprints:
             continue
@@ -882,7 +1198,7 @@ def normalize_ai_candidates(
                 if reason == "same normalized Latin text":
                     continue
                 candidate["duplicate_warning"] = (
-                    f"Possible duplicate of “{existing['latin']}” "
+                    f"Possible duplicate of “{content_lead(existing)}” "
                     f"({existing['attribution']}): {reason}."
                 )
                 if candidate["review_status"] != "reject":
@@ -908,6 +1224,12 @@ def new_state() -> dict[str, Any]:
             "visibility": "PUBLIC",
             "recent_saying_window": 20,
             "max_post_chars": 600,
+            "enabled_collections": COLLECTION_KEYS,
+            "collection_weights": {
+                COLLECTION_LATIN: 1,
+                COLLECTION_PHYSICS: 1,
+                COLLECTION_HISTORY: 1,
+            },
         },
         "linkedin": {
             "connected": False,
@@ -917,7 +1239,9 @@ def new_state() -> dict[str, Any]:
             "display_name": "",
         },
         "oauth": {},
-        "sayings": copy.deepcopy(SEED_SAYINGS),
+        # `sayings` is retained as the internal key so existing GitHub state,
+        # queue records, and worker logic migrate without destructive rewrites.
+        "sayings": copy.deepcopy(ALL_SEED_CONTENT),
         "ai_candidates": [],
         "queue": [],
         "history": [],
@@ -932,6 +1256,19 @@ def normalize_state(state: dict[str, Any]) -> dict[str, Any]:
     state.setdefault("settings", {})
     for key, value in defaults["settings"].items():
         state["settings"].setdefault(key, value)
+    state["settings"]["enabled_collections"] = list(
+        dict.fromkeys(
+            canonical_collection(value)
+            for value in state["settings"].get(
+                "enabled_collections", COLLECTION_KEYS
+            )
+        )
+    )
+    raw_weights = state["settings"].get("collection_weights", {})
+    state["settings"]["collection_weights"] = {
+        key: max(1, int(raw_weights.get(key, 1)))
+        for key in COLLECTION_KEYS
+    }
     state.setdefault("linkedin", defaults["linkedin"])
     for key, value in defaults["linkedin"].items():
         state["linkedin"].setdefault(key, value)
@@ -965,13 +1302,25 @@ def append_event(
 
 
 def format_post(saying: dict[str, Any]) -> str:
-    return "\n\n".join(
-        [
-        str(saying["latin"]).strip(),
-        str(saying["translation"]).strip(),
-        f"— {str(saying['attribution']).strip()}",
+    collection = canonical_collection(saying.get("collection"))
+    if collection == COLLECTION_LATIN:
+        parts = [
+            normalize_space(saying.get("latin")),
+            normalize_space(saying.get("translation")),
+            f"— {normalize_space(saying.get('attribution'))}",
         ]
-    )
+    else:
+        prefix = (
+            "Physics note"
+            if collection == COLLECTION_PHYSICS
+            else "History note"
+        )
+        parts = [
+            f"{prefix}: {normalize_space(saying.get('lead'))}",
+            normalize_space(saying.get("body")),
+            f"Source: {normalize_space(saying.get('attribution'))}",
+        ]
+    return "\n\n".join(part for part in parts if part)
 
 
 def encrypt_value(value: str, key: str) -> str:
@@ -1113,17 +1462,20 @@ def validate_ai_candidate(
         },
         default_origin=origin,
     )
-    missing = [
-        field
-        for field in (
-            "latin",
-            "translation",
+    collection = candidate["collection"]
+    required_fields = (
+        ("latin", "translation", "attribution", "latin_kind", "source_language")
+        if collection == COLLECTION_LATIN
+        else (
+            "lead",
+            "body",
             "attribution",
-            "latin_kind",
-            "source_language",
+            "source_title",
+            "source_url",
+            "primary_theme",
         )
-        if not candidate[field]
-    ]
+    )
+    missing = [field for field in required_fields if not candidate[field]]
     if missing:
         raise ValueError(f"Candidate is missing: {', '.join(missing)}.")
     if len(format_post(candidate)) > 3000:
@@ -1141,16 +1493,156 @@ def validate_ai_candidate(
         )
     source_language = canonical_language(candidate["source_language"])
     kind_key = latin_search_key(candidate["latin_kind"])
-    if source_language != "Latin" and "rendering" not in kind_key.split():
+    if (
+        collection == COLLECTION_LATIN
+        and source_language != "Latin"
+        and "rendering" not in kind_key.split()
+    ):
         raise ValueError(
             "A non-Latin source must be labelled as a modern Latin rendering."
         )
+    if collection != COLLECTION_LATIN:
+        parsed_url = urlparse(candidate["source_url"])
+        if parsed_url.scheme not in {"http", "https"} or not parsed_url.netloc:
+            raise ValueError("Fact candidate needs a valid source URL.")
     if confidence == "low" and candidate["review_status"] != "reject":
         candidate["review_status"] = "caution"
         candidate["note"] = normalize_space(
             f"{candidate['note']} Low source confidence; verify before use."
         )
     return candidate
+
+
+def generate_deepseek_facts(
+    api_key: str,
+    model: str,
+    collection: str,
+    quantity: int,
+    required_theme: str,
+    supporting_themes: str,
+    existing_items: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], list[str]]:
+    """Generate source-led physics or history candidates for human review."""
+    collection = canonical_collection(collection)
+    if collection not in {COLLECTION_PHYSICS, COLLECTION_HISTORY}:
+        raise DeepSeekError("Select Physics facts or History facts.")
+    domain = "physics" if collection == COLLECTION_PHYSICS else "history"
+    system_prompt = f"""
+You are a cautious {domain} research editor. Return JSON only. Propose concise,
+evergreen, secular fact candidates for a public LinkedIn post. Every factual
+claim needs a checkable, authoritative source. Prefer primary institutions,
+standards bodies, museums, archives, universities, or peer-reviewed sources.
+Do not invent a quotation, citation, title, date, institution, or URL. Avoid
+breaking news, partisan framing, disputed superlatives, myths, trivia without
+context, medicine or safety advice, and claims whose accuracy depends on the
+current date. If uncertain, set source_confidence to low. Generated material is
+an editorial lead and is never source verification.
+
+Return:
+{{
+  "candidates": [
+    {{
+      "collection": "{collection}",
+      "lead": "one self-contained fact",
+      "body": "one short explanatory or contextual sentence",
+      "attribution": "institution or author, source title",
+      "source_title": "exact source title",
+      "source_url": "https://...",
+      "source_type": "primary source, standard, museum, archive, or reference",
+      "primary_theme": "one concise theme",
+      "tags": "comma-separated tags",
+      "source_language": "language of the source",
+      "source_period": "relevant date or period",
+      "source_confidence": "high OR medium OR low",
+      "source_text": "short supporting excerpt or blank",
+      "note": "specific verification caveat or blank",
+      "secular": true
+    }}
+  ]
+}}
+""".strip()
+    quantity = int(quantity)
+    existing_compact = [
+        {
+            "lead": normalize_space(item.get("lead")),
+            "attribution": normalize_space(item.get("attribution")),
+        }
+        for item in existing_items
+        if canonical_collection(item.get("collection")) == collection
+    ]
+    theme_instruction = (
+        f"Every candidate must have the primary theme "
+        f"“{normalize_space(required_theme)}”. "
+        if normalize_space(required_theme)
+        else ""
+    )
+    parsed = call_deepseek_json(
+        api_key,
+        model,
+        system_prompt,
+        (
+            f"Return exactly {quantity} distinct {domain} candidates. "
+            + theme_instruction
+            + "Supporting themes may include: "
+            + (
+                normalize_space(supporting_themes)
+                or (
+                    "measurement, matter, energy, space"
+                    if collection == COLLECTION_PHYSICS
+                    else "institutions, technology, daily life, discovery"
+                )
+            )
+            + ". Keep each formatted post under 600 characters. Do not "
+            "duplicate these existing records: "
+            + json.dumps(existing_compact, ensure_ascii=False)
+        ),
+        max_tokens=max(2600, quantity * 800),
+    )
+    raw_candidates = parsed.get("candidates")
+    if not isinstance(raw_candidates, list):
+        raise DeepSeekError("DeepSeek did not return a candidate list.")
+    accepted: list[dict[str, Any]] = []
+    warnings: list[str] = []
+    required_theme_key = latin_search_key(required_theme)
+    for index, raw in enumerate(raw_candidates):
+        try:
+            if not isinstance(raw, dict):
+                raise ValueError("Candidate is not a JSON object.")
+            raw["collection"] = collection
+            candidate = validate_ai_candidate(
+                raw,
+                origin=f"DeepSeek {domain} suggestion ({model})",
+            )
+            if (
+                required_theme_key
+                and required_theme_key
+                not in latin_search_key(candidate["primary_theme"])
+            ):
+                raise ValueError(
+                    f"primary_theme was “{candidate['primary_theme']}”, not "
+                    f"the required “{normalize_space(required_theme)}”."
+                )
+            match = near_duplicate_match(
+                candidate,
+                existing_items + accepted,
+            )
+            if match:
+                raise ValueError(
+                    f"possible duplicate of “{match[0].get('lead')}”: "
+                    f"{match[1]}."
+                )
+            accepted.append(candidate)
+        except ValueError as exc:
+            warnings.append(f"Candidate {index + 1} was skipped: {exc}")
+    if not accepted:
+        detail = f" First rejection: {warnings[0]}" if warnings else ""
+        raise DeepSeekError(f"No usable {domain} candidates were returned.{detail}")
+    if len(accepted) < quantity:
+        warnings.append(
+            f"Staged {len(accepted)} of {quantity} requested candidates; "
+            "filtered candidates were not replaced automatically."
+        )
+    return accepted[:quantity], warnings
 
 
 def generate_deepseek_sayings(
@@ -1528,7 +2020,8 @@ def review_with_deepseek(
     model: str,
     candidate: dict[str, Any],
 ) -> dict[str, Any]:
-    system_prompt = """
+    if canonical_collection(candidate.get("collection")) == COLLECTION_LATIN:
+        system_prompt = """
 You are a skeptical classical-language reviewer. Return JSON only. Assess the
 candidate without rewriting it. Check Latin grammar, translation fidelity,
 whether the Latin is original or modern, whether the attribution is plausible,
@@ -1551,6 +2044,34 @@ Return:
   "corrected_source_period": "corrected source period or blank",
   "corrected_source_confidence": "high, medium, low, or blank",
   "correction_reason": "why the correction is suggested or blank"
+}
+""".strip()
+    else:
+        system_prompt = """
+You are a skeptical research editor. Return JSON only. Assess the supplied
+physics or history candidate without rewriting it. Check internal consistency,
+chronology where relevant, whether the attribution and URL are plausible,
+whether the source appears authoritative, whether the explanation supports the
+lead, and whether the item is secular. Do not claim that you opened the URL or
+independently verified the source.
+
+Return:
+{
+  "overall": "pass | caution | reject",
+  "latin_assessment": "not applicable",
+  "translation_assessment": "assess lead/body consistency",
+  "attribution_assessment": "...",
+  "source_assessment": "...",
+  "secularity_assessment": "...",
+  "recommended_action": "...",
+  "corrected_latin": "",
+  "corrected_translation": "",
+  "corrected_attribution": "",
+  "corrected_latin_kind": "",
+  "corrected_source_language": "",
+  "corrected_source_period": "",
+  "corrected_source_confidence": "high, medium, low, or blank",
+  "correction_reason": ""
 }
 """.strip()
     parsed = call_deepseek_json(
@@ -1845,7 +2366,7 @@ class GitHubStateStore:
 
 
 @st.cache_resource
-def get_store(repository: str, token: str) -> GitHubStateStore:
+def get_store_v200(repository: str, token: str) -> GitHubStateStore:
     store = GitHubStateStore(repository, token)
     store.ensure_ready()
     return store
@@ -2093,11 +2614,21 @@ def generate_schedule(
     zone = ZoneInfo(timezone_name)
     local_now = now.astimezone(zone)
     settings = state["settings"]
+    enabled_collections = {
+        canonical_collection(value)
+        for value in settings.get("enabled_collections", COLLECTION_KEYS)
+    }
     approved = [
-        item for item in state["sayings"] if normalize_bool(item.get("approved"))
+        item
+        for item in state["sayings"]
+        if normalize_bool(item.get("approved"))
+        and canonical_collection(item.get("collection")) in enabled_collections
     ]
     if not approved:
-        raise ValueError("Approve at least one saying before generating a schedule.")
+        raise ValueError(
+            "Approve at least one item in an enabled collection before "
+            "generating a schedule."
+        )
 
     earliest = parse_clock(settings["earliest_time"])
     latest = parse_clock(settings["latest_time"])
@@ -2198,11 +2729,36 @@ def generate_schedule(
                 ]
             if not choices:
                 break
-            saying = rng.choice(choices)
+            weights = settings.get("collection_weights", {})
+            choices_by_collection: dict[str, list[dict[str, Any]]] = {}
+            for item in choices:
+                choices_by_collection.setdefault(
+                    canonical_collection(item.get("collection")),
+                    [],
+                ).append(item)
+            available_collections = list(choices_by_collection)
+            selected_collection = rng.choices(
+                available_collections,
+                weights=[
+                    max(
+                        1,
+                        int(
+                            weights.get(
+                                collection_key,
+                                1,
+                            )
+                        ),
+                    )
+                    for collection_key in available_collections
+                ],
+                k=1,
+            )[0]
+            saying = rng.choice(choices_by_collection[selected_collection])
             queue_record = {
                 "id": str(uuid.uuid4()),
                 "saying_id": saying["id"],
                 "saying_snapshot": copy.deepcopy(saying),
+                "collection": saying["collection"],
                 "post_text": format_post(saying),
                 "scheduled_for": candidate.astimezone(timezone.utc).isoformat(),
                 "status": "queued",
@@ -2493,7 +3049,7 @@ def recover_interrupted_posts(store: GitHubStateStore) -> int:
 
 
 @st.cache_resource
-def get_worker(
+def get_worker_v200(
     _store: GitHubStateStore, fernet_key: str, timezone_name: str
 ) -> PosterWorker:
     recover_interrupted_posts(_store)
@@ -2508,7 +3064,7 @@ def require_login(admin_password: str) -> bool:
     if st.session_state.get("li_poster_authenticated"):
         return True
     st.title("🏛️ li_poster")
-    st.caption("Automated Latin-first posts for LinkedIn")
+    st.caption("Human-reviewed, multi-collection posts for LinkedIn")
     with st.form("admin_login"):
         entered = st.text_input("Admin password", type="password")
         submitted = st.form_submit_button(
@@ -2543,8 +3099,17 @@ def queue_dataframe(
                 "scheduled": scheduled.strftime("%Y-%m-%d %H:%M %Z"),
                 "published": posted_at,
                 "status": item["status"],
-                "latin": saying.get("latin", "Missing saying"),
-                "translation": saying.get("translation", ""),
+                "collection": COLLECTION_LABELS.get(
+                    canonical_collection(saying.get("collection")),
+                    "Unknown",
+                ),
+                "lead": content_lead(saying) or "Missing content",
+                "detail": (
+                    saying.get("translation", "")
+                    if canonical_collection(saying.get("collection"))
+                    == COLLECTION_LATIN
+                    else saying.get("body", "")
+                ),
                 "attribution": saying.get("attribution", ""),
                 "characters": len(
                     str(item.get("post_text") or format_post(saying))
@@ -2667,7 +3232,7 @@ def render_dashboard(
         labels = {
             item["id"]: (
                 f"{item['status']}: "
-                f"{saying_lookup.get(item['saying_id'], {}).get('latin', item['id'])}"
+                f"{content_lead(saying_lookup.get(item['saying_id'], {})) or item['id']}"
             )
             for item in review_items
         }
@@ -2729,17 +3294,18 @@ def render_dashboard(
 
 1. Confirm the Dashboard shows **LinkedIn: Connected**, **Automation:
    Paused**, **Worker: Active**, and **Dry-run mode is on**.
-2. Open **Sayings**. Review the Latin, translation, attribution,
-   classification, source information, and internal note. Approve only entries
-   you are comfortable publishing, then select **Save sayings**. Wait for the
+2. Open **Content library**. Review the collection-specific text, attribution,
+   source information, source URL, and internal note. Approve only entries
+   you are comfortable publishing, then select **Save content**. Wait for the
    persistent “saved and verified” confirmation.
-3. Optionally use **Import sayings from CSV**. Imported rows are forced to
+3. Optionally use **Import content from CSV**. Imported rows are forced to
    unapproved status.
 4. Optionally use the **DeepSeek AI workshop**. Generated and translated
    material is staged separately and can enter the library only as unapproved
    content. AI review is useful editorial assistance, not source verification.
 5. Open **Schedule**. Choose the weekly range, allowed days, randomized time
-   window, minimum spacing, visibility, and schedule horizon. Save the settings.
+   window, minimum spacing, visibility, enabled collections, collection
+   weights, and schedule horizon. Save the settings.
 6. While dry-run remains on, select **Fill randomized schedule** and inspect
    every queued item on the Dashboard.
 7. If desired, use **LinkedIn and setup → Publish a connections-only test**.
@@ -2747,14 +3313,18 @@ def render_dashboard(
 8. For live operation, return to **Schedule**, turn dry-run off, save, inspect
    the queue again, and only then select **Enable automation**.
 
-### Sayings and AI safeguards
+### Collections and AI safeguards
 
 - Internal notes and verification status are never included in LinkedIn text.
-- A LinkedIn post contains only Latin, English translation, and attribution.
-- Removing or unapproving a scheduled saying pauses automation before it can
+- Latin posts contain Latin, English translation, and attribution. Physics and
+  history posts contain a labelled fact, short context, and source.
+- Removing or unapproving a scheduled item pauses automation before it can
   publish. Cancel and refill the queue after material library changes.
-- The scheduler avoids duplicate active queue entries for a saying and rotates
+- The scheduler avoids duplicate active queue entries for an item and rotates
   through approved material before reusing older entries.
+- Starter physics and history records are unapproved. Their URLs and wording
+  are review leads, not a substitute for opening and checking the source.
+- Collection weights influence randomized selection; they are not exact quotas.
 - DeepSeek requests use the API account configured by `DEEPSEEK_API_KEY` and
   may incur usage charges. The API key is never displayed or written to GitHub
   runtime state.
@@ -2862,11 +3432,12 @@ def validate_library_records(
     seen: dict[str, int] = {}
     for index, raw in enumerate(records):
         record = normalize_saying(raw)
-        missing = [
-            field
-            for field in ("latin", "translation", "attribution")
-            if not record[field]
-        ]
+        required = (
+            ("latin", "translation", "attribution")
+            if record["collection"] == COLLECTION_LATIN
+            else ("lead", "body", "attribution", "source_title")
+        )
+        missing = [field for field in required if not record[field]]
         if missing:
             errors.append(
                 f"Row {index + 1} is missing: {', '.join(missing)}."
@@ -2888,7 +3459,7 @@ def validate_library_records(
         if fingerprint in seen:
             errors.append(
                 f"Rows {seen[fingerprint]} and {index + 1} duplicate the "
-                "same Latin and attribution."
+                "same collection, lead text, and attribution."
             )
         else:
             seen[fingerprint] = index + 1
@@ -2974,7 +3545,7 @@ def stage_ai_candidates(
                 duplicates += 1
                 continue
             candidate["duplicate_warning"] = (
-                f"Possible duplicate of “{existing['latin']}” "
+                f"Possible duplicate of “{content_lead(existing)}” "
                 f"({existing['attribution']}): {reason}."
             )
             if candidate["review_status"] != "reject":
@@ -3002,10 +3573,10 @@ def render_sayings(
     state: dict[str, Any],
     config: dict[str, str],
 ) -> None:
-    st.header("Sayings")
+    st.header("Content library")
     st.caption(
-        "Only approved entries can be scheduled. Review original wording, "
-        "translation, attribution, and internal notes before approval."
+        "Latin sayings, physics facts, and history facts share one reviewed "
+        "library. Only approved entries can be scheduled."
     )
     notice = st.session_state.pop("sayings_notice", "")
     if notice:
@@ -3024,6 +3595,28 @@ def render_sayings(
         column_config={
             "id": None,
             "approved": st.column_config.CheckboxColumn("approved"),
+            "collection": st.column_config.SelectboxColumn(
+                "collection",
+                options=COLLECTION_KEYS,
+                required=True,
+            ),
+            "lead": st.column_config.TextColumn(
+                "fact / lead",
+                help="Required for physics and history; blank for Latin sayings.",
+            ),
+            "body": st.column_config.TextColumn(
+                "explanation / context",
+                help="Required for physics and history; blank for Latin sayings.",
+            ),
+            "latin": st.column_config.TextColumn(
+                "Latin",
+                help="Required only for Latin sayings.",
+            ),
+            "translation": st.column_config.TextColumn(
+                "English translation",
+                help="Required only for Latin sayings.",
+            ),
+            "source_url": st.column_config.LinkColumn("source URL"),
             "note": st.column_config.TextColumn(
                 "internal note",
                 help="Internal only; this text is never included in a post.",
@@ -3044,7 +3637,7 @@ def render_sayings(
             f"{persisted_approved_count} saved."
         )
     left, right = st.columns(2)
-    if left.button("Save sayings", type="primary"):
+    if left.button("Save content", type="primary"):
         raw_records = edited.fillna("").to_dict("records")
         records, errors = validate_library_records(
             raw_records,
@@ -3059,7 +3652,7 @@ def render_sayings(
                 append_event(
                     current,
                     "info",
-                    "Sayings library updated.",
+                    "Content library updated.",
                     count=len(records),
                 )
 
@@ -3082,38 +3675,44 @@ def render_sayings(
                 store.update_verified(
                     save,
                     sayings_saved,
-                    "The sayings library update",
+                    "The content library update",
                 )
             except StateStoreError as exc:
                 st.error(str(exc))
             else:
                 saved_count = sum(expected_approvals.values())
                 st.session_state["sayings_notice"] = (
-                    f"Sayings saved and verified: {saved_count} of "
+                    f"Content saved and verified: {saved_count} of "
                     f"{len(records)} approved."
                 )
                 st.rerun()
 
     right.download_button(
-        "Download sayings CSV",
+        "Download content CSV",
         edited.to_csv(index=False).encode("utf-8"),
-        "li_poster_sayings.csv",
+        "li_poster_content.csv",
         "text/csv",
     )
 
     st.caption(
-        f"{persisted_approved_count} of {len(state['sayings'])} sayings are "
-        "approved in GitHub state."
+        f"{persisted_approved_count} of {len(state['sayings'])} items are "
+        "approved in GitHub state. "
+        + " · ".join(
+            f"{COLLECTION_LABELS[key]}: "
+            f"{sum(canonical_collection(item.get('collection')) == key for item in state['sayings'])}"
+            for key in COLLECTION_KEYS
+        )
     )
 
-    with st.expander("Import sayings from CSV"):
+    with st.expander("Import content from CSV"):
         st.write(
-            "Upload a UTF-8 CSV containing `latin`, `translation`, and "
-            "`attribution`. Optional columns match the downloaded CSV. "
+            "Upload a UTF-8 CSV using the downloaded schema. Latin rows need "
+            "`latin`, `translation`, and `attribution`; fact rows need "
+            "`collection`, `lead`, `body`, `attribution`, and `source_title`. "
             "Imported rows are always unapproved."
         )
         upload = st.file_uploader(
-            "Sayings CSV",
+            "Content CSV",
             type=["csv"],
             key="sayings_csv_upload",
         )
@@ -3122,7 +3721,7 @@ def render_sayings(
                 frame = pd.read_csv(upload, dtype=str).fillna("")
                 missing_columns = [
                     field
-                    for field in ("latin", "translation", "attribution")
+                    for field in ("collection", "attribution")
                     if field not in frame.columns
                 ]
                 if missing_columns:
@@ -3141,11 +3740,11 @@ def render_sayings(
                     lambda current: add_unapproved_records(
                         current,
                         normalized,
-                        "Sayings imported from CSV.",
+                        "Content imported from CSV.",
                     )
                 )
                 st.session_state["sayings_notice"] = (
-                    f"Imported {added} saying(s); skipped "
+                    f"Imported {added} item(s); skipped "
                     f"{duplicates} duplicate(s)."
                 )
                 st.rerun()
@@ -3169,10 +3768,15 @@ def render_sayings(
                 "AI output is never approved, scheduled, or published automatically."
             )
             generate_tab, translate_tab, review_tab = st.tabs(
-                ["Suggest sayings", "Translate text", "Review candidate"]
+                ["Generate content", "Translate into Latin", "Review candidate"]
             )
             with generate_tab:
                 with st.form("deepseek_generate_form"):
+                    generation_collection = st.selectbox(
+                        "Collection",
+                        options=COLLECTION_KEYS,
+                        format_func=lambda value: COLLECTION_LABELS[value],
+                    )
                     quantity = st.number_input(
                         "Number of candidates",
                         min_value=1,
@@ -3223,6 +3827,12 @@ def render_sayings(
                             "modes."
                         ),
                     )
+                    if generation_collection != COLLECTION_LATIN:
+                        st.caption(
+                            "For fact collections, DeepSeek uses authoritative "
+                            "source requirements; the source-language controls "
+                            "above are ignored."
+                        )
                     generate = st.form_submit_button(
                         "Ask DeepSeek for candidates",
                         type="primary",
@@ -3230,17 +3840,28 @@ def render_sayings(
                 if generate:
                     try:
                         with st.spinner("DeepSeek is preparing candidates..."):
-                            candidates, warnings = generate_deepseek_sayings(
-                                api_key,
-                                model,
-                                int(quantity),
-                                required_theme,
-                                themes,
-                                required_source,
-                                sources,
-                                source_mode,
-                                state["sayings"] + state["ai_candidates"],
-                            )
+                            if generation_collection == COLLECTION_LATIN:
+                                candidates, warnings = generate_deepseek_sayings(
+                                    api_key,
+                                    model,
+                                    int(quantity),
+                                    required_theme,
+                                    themes,
+                                    required_source,
+                                    sources,
+                                    source_mode,
+                                    state["sayings"] + state["ai_candidates"],
+                                )
+                            else:
+                                candidates, warnings = generate_deepseek_facts(
+                                    api_key,
+                                    model,
+                                    generation_collection,
+                                    int(quantity),
+                                    required_theme,
+                                    themes,
+                                    state["sayings"] + state["ai_candidates"],
+                                )
                         added, duplicates, near_warnings = store.update(
                             lambda current: stage_ai_candidates(
                                 current,
@@ -3323,7 +3944,8 @@ def render_sayings(
                 else:
                     labels = {
                         item["id"]: (
-                            f"{item['latin']} — {item['attribution']}"
+                            f"{COLLECTION_LABELS[item['collection']]}: "
+                            f"{content_lead(item)} — {item['attribution']}"
                         )
                         for item in candidates
                     }
@@ -3504,6 +4126,7 @@ def render_sayings(
                     {
                         "add": False,
                         "id": item["id"],
+                        "collection": item["collection"],
                         "review_status": item.get(
                             "review_status", "unreviewed"
                         ),
@@ -3516,6 +4139,8 @@ def render_sayings(
                         "policy_warning": item.get(
                             "policy_warning", ""
                         ),
+                        "lead": item.get("lead", ""),
+                        "body": item.get("body", ""),
                         "latin": item["latin"],
                         "translation": item["translation"],
                         "primary_theme": item.get("primary_theme", ""),
@@ -3524,6 +4149,8 @@ def render_sayings(
                             "source_period", "unknown"
                         ),
                         "attribution": item["attribution"],
+                        "source_title": item.get("source_title", ""),
+                        "source_url": item.get("source_url", ""),
                         "latin_kind": item["latin_kind"],
                         "source_text": item["source_text"],
                         "reviewed_at": item.get("reviewed_at", ""),
@@ -3539,13 +4166,20 @@ def render_sayings(
                     "add": st.column_config.CheckboxColumn(
                         "add to library"
                     ),
+                    "collection": st.column_config.TextColumn("collection"),
+                    "source_url": st.column_config.LinkColumn("source URL"),
                 },
                 disabled=[
+                    "collection",
+                    "lead",
+                    "body",
                     "latin",
                     "translation",
                     "primary_theme",
                     "source_confidence",
                     "attribution",
+                    "source_title",
+                    "source_url",
                     "latin_kind",
                     "source_language",
                     "source_period",
@@ -3781,19 +4415,31 @@ def render_schedule(
     approved_count = sum(
         normalize_bool(item.get("approved")) for item in state["sayings"]
     )
+    approved_by_collection = {
+        key: sum(
+            normalize_bool(item.get("approved"))
+            and canonical_collection(item.get("collection")) == key
+            for item in state["sayings"]
+        )
+        for key in COLLECTION_KEYS
+    }
     active_unique = {
         item["saying_id"]
         for item in state["queue"]
         if item["status"] in ("queued", "publishing")
     }
     st.caption(
-        f"{approved_count} approved saying(s); "
-        f"{len(active_unique)} unique saying(s) currently active in the queue."
+        f"{approved_count} approved item(s); "
+        f"{len(active_unique)} unique item(s) currently active in the queue. "
+        + " · ".join(
+            f"{COLLECTION_LABELS[key]}: {approved_by_collection[key]}"
+            for key in COLLECTION_KEYS
+        )
     )
     if approved_count < 5:
         st.warning(
-            "Approve more sayings before building a multi-week schedule. "
-            "The scheduler will not place duplicate copies of a saying in the "
+            "Approve more content before building a multi-week schedule. "
+            "The scheduler will not place duplicate copies of an item in the "
             "active queue."
         )
     with st.form("schedule_settings"):
@@ -3848,6 +4494,29 @@ def render_schedule(
             ["PUBLIC", "CONNECTIONS"],
             index=0 if settings["visibility"] == "PUBLIC" else 1,
         )
+        enabled_collections = st.multiselect(
+            "Enabled collections",
+            options=COLLECTION_KEYS,
+            default=settings.get("enabled_collections", COLLECTION_KEYS),
+            format_func=lambda value: COLLECTION_LABELS[value],
+            help="Only approved content from these collections can be queued.",
+        )
+        st.caption(
+            "Collection weights influence the mix when more than one "
+            "collection is enabled; they do not guarantee exact quotas."
+        )
+        weight_columns = st.columns(3)
+        collection_weights: dict[str, int] = {}
+        saved_weights = settings.get("collection_weights", {})
+        for index, collection_key in enumerate(COLLECTION_KEYS):
+            collection_weights[collection_key] = int(
+                weight_columns[index].number_input(
+                    f"{COLLECTION_LABELS[collection_key]} weight",
+                    min_value=1,
+                    max_value=10,
+                    value=max(1, int(saved_weights.get(collection_key, 1))),
+                )
+            )
         dry_run = st.toggle(
             "Dry-run mode", value=bool(settings["dry_run"])
         )
@@ -3863,6 +4532,8 @@ def render_schedule(
             errors.append("Minimum posts cannot exceed maximum posts.")
         if not selected_days:
             errors.append("Choose at least one posting day.")
+        if not enabled_collections:
+            errors.append("Enable at least one content collection.")
         if earliest > latest:
             errors.append("Earliest time must be before latest time.")
         if errors:
@@ -3884,6 +4555,8 @@ def render_schedule(
                         "max_post_chars": int(maximum_characters),
                         "visibility": visibility,
                         "dry_run": bool(dry_run),
+                        "enabled_collections": list(enabled_collections),
+                        "collection_weights": collection_weights,
                     }
                 )
                 append_event(current, "info", "Schedule settings updated.")
@@ -3901,6 +4574,8 @@ def render_schedule(
                 "max_post_chars": int(maximum_characters),
                 "visibility": visibility,
                 "dry_run": bool(dry_run),
+                "enabled_collections": list(enabled_collections),
+                "collection_weights": collection_weights,
             }
 
             def settings_saved(current: dict[str, Any]) -> bool:
@@ -3972,14 +4647,22 @@ def render_schedule(
     if right.button(action):
         queued = any(row["status"] == "queued" for row in state["queue"])
         approved = any(
-            normalize_bool(row.get("approved")) for row in state["sayings"]
+            normalize_bool(row.get("approved"))
+            and canonical_collection(row.get("collection"))
+            in {
+                canonical_collection(value)
+                for value in settings.get(
+                    "enabled_collections", COLLECTION_KEYS
+                )
+            }
+            for row in state["sayings"]
         )
         if not automation_enabled and not state["linkedin"]["connected"]:
             st.error("Connect LinkedIn before enabling automation.")
         elif not automation_enabled and settings["dry_run"]:
             st.error("Turn off dry-run mode before enabling automation.")
         elif not automation_enabled and not approved:
-            st.error("Approve at least one saying first.")
+            st.error("Approve at least one item in an enabled collection first.")
         elif not automation_enabled and not queued:
             st.error("Fill the randomized schedule first.")
         elif not automation_enabled and not worker.health()["ready"]:
@@ -4117,10 +4800,12 @@ def render_linkedin_setup(
             st.caption("Exact text that will be published")
             st.code(format_post(approved[0]))
         else:
-            st.info("Approve at least one saying to make a test available.")
+            st.info(
+                "Approve at least one content item to make a test available."
+            )
         confirmed = st.checkbox(
             "I understand this immediately publishes the first approved "
-            "saying to my LinkedIn connections."
+            "content item to my LinkedIn connections."
         )
         if st.button(
             "Publish test now",
@@ -4130,7 +4815,7 @@ def render_linkedin_setup(
             if not linkedin["connected"]:
                 st.error("Connect LinkedIn first.")
             elif not approved:
-                st.error("Approve at least one saying first.")
+                st.error("Approve at least one content item first.")
             else:
                 try:
                     post_id = publish_linkedin_post(
@@ -4230,7 +4915,7 @@ def main() -> None:
         st.stop()
 
     try:
-        store = get_store(
+        store = get_store_v200(
             config["GITHUB_REPOSITORY"],
             config["GITHUB_STATE_TOKEN"],
         )
@@ -4243,7 +4928,7 @@ def main() -> None:
 
     # Start before the password gate so an external app-waker visit is enough
     # to restart the posting worker after Streamlit hibernation.
-    worker = get_worker(
+    worker = get_worker_v200(
         store,
         config["FERNET_KEY"],
         timezone_name,
@@ -4266,7 +4951,7 @@ def main() -> None:
     dashboard, sayings, schedule, linkedin, activity = st.tabs(
         [
             "Dashboard",
-            "Sayings",
+            "Content library",
             "Schedule",
             "LinkedIn and setup",
             "Activity",
