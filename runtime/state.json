@@ -1,6 +1,6 @@
 {
   "schema_version": 6,
-  "revision": 40,
+  "revision": 41,
   "settings": {
     "automation_enabled": true,
     "dry_run": false,
@@ -2571,9 +2571,10 @@
       "collection": "history_facts",
       "post_text": "History note: The Rosetta Stone carries one decree in three writing systems.\n\nIts Greek, Demotic, and hieroglyphic texts became central to deciphering Egyptian hieroglyphs.\n\nSource: The British Museum, The Rosetta Stone",
       "scheduled_for": "2026-07-29T21:21:00+00:00",
-      "status": "queued",
+      "status": "publishing",
       "created_at": "2026-07-29T00:37:50.556055+00:00",
-      "attempts": 0
+      "attempts": 1,
+      "claimed_at": "2026-07-29T21:21:06.348272+00:00"
     },
     {
       "id": "e852c5c4-10b4-4b51-979f-dafefbf4f565",
@@ -2905,6 +2906,14 @@
       "at": "2026-07-29T00:38:49.181508+00:00",
       "level": "info",
       "message": "Automation enabled."
+    },
+    {
+      "at": "2026-07-29T21:21:06.348339+00:00",
+      "level": "info",
+      "message": "Claimed a scheduled post.",
+      "details": {
+        "queue_id": "a4bca9c1-ac11-43d3-bf30-43fdb25e110d"
+      }
     }
   ],
   "ai_candidates": [
