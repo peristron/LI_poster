@@ -1,6 +1,6 @@
 {
   "schema_version": 6,
-  "revision": 41,
+  "revision": 42,
   "settings": {
     "automation_enabled": true,
     "dry_run": false,
@@ -2571,10 +2571,12 @@
       "collection": "history_facts",
       "post_text": "History note: The Rosetta Stone carries one decree in three writing systems.\n\nIts Greek, Demotic, and hieroglyphic texts became central to deciphering Egyptian hieroglyphs.\n\nSource: The British Museum, The Rosetta Stone",
       "scheduled_for": "2026-07-29T21:21:00+00:00",
-      "status": "publishing",
+      "status": "posted",
       "created_at": "2026-07-29T00:37:50.556055+00:00",
       "attempts": 1,
-      "claimed_at": "2026-07-29T21:21:06.348272+00:00"
+      "claimed_at": "2026-07-29T21:21:06.348272+00:00",
+      "posted_at": "2026-07-29T21:21:08.429073+00:00",
+      "linkedin_post_id": "urn:li:share:7488342874330173440"
     },
     {
       "id": "e852c5c4-10b4-4b51-979f-dafefbf4f565",
@@ -2645,6 +2647,46 @@
       "status": "queued",
       "created_at": "2026-07-29T00:37:50.556055+00:00",
       "attempts": 0
+    },
+    {
+      "id": "a966c3be-570d-4c61-9f80-5b2fa8687ce8",
+      "saying_id": "ennius-amicus-certus",
+      "saying_snapshot": {
+        "id": "ennius-amicus-certus",
+        "approved": true,
+        "collection": "latin_sayings",
+        "lead": "",
+        "body": "",
+        "latin": "Amicus certus in re incerta cernitur.",
+        "translation": "A sure friend is recognized in uncertain circumstances.",
+        "attribution": "Ennius, fragment quoted by Cicero, De Amicitia 64",
+        "source_title": "Ennius, fragment quoted by Cicero, De Amicitia 64",
+        "source_url": "",
+        "source_type": "primary text",
+        "tags": "",
+        "verified_at": "",
+        "latin_kind": "original Latin",
+        "primary_theme": "",
+        "source_language": "Latin",
+        "source_period": "antiquity",
+        "source_confidence": "curated; verify edition",
+        "source_text": "",
+        "origin": "bundled curated library",
+        "verification_status": "review source before approval",
+        "note": "",
+        "ai_review": {},
+        "review_status": "unreviewed",
+        "reviewed_at": "",
+        "review_model": "",
+        "duplicate_warning": "",
+        "policy_warning": ""
+      },
+      "collection": "latin_sayings",
+      "post_text": "Amicus certus in re incerta cernitur.\n\nA sure friend is recognized in uncertain circumstances.\n\n— Ennius, fragment quoted by Cicero, De Amicitia 64",
+      "scheduled_for": "2026-08-06T21:26:00+00:00",
+      "status": "queued",
+      "created_at": "2026-07-29T21:21:08.429179+00:00",
+      "attempts": 0
     }
   ],
   "history": [
@@ -2680,6 +2722,49 @@
       "claimed_at": "2026-07-27T22:18:18.096748+00:00",
       "posted_at": "2026-07-27T22:18:20.211028+00:00",
       "linkedin_post_id": "urn:li:share:7487632491852496896"
+    },
+    {
+      "id": "a4bca9c1-ac11-43d3-bf30-43fdb25e110d",
+      "saying_id": "history-rosetta-stone",
+      "saying_snapshot": {
+        "id": "history-rosetta-stone",
+        "approved": true,
+        "collection": "history_facts",
+        "lead": "The Rosetta Stone carries one decree in three writing systems.",
+        "body": "Its Greek, Demotic, and hieroglyphic texts became central to deciphering Egyptian hieroglyphs.",
+        "latin": "",
+        "translation": "",
+        "attribution": "The British Museum, The Rosetta Stone",
+        "source_title": "The Rosetta Stone",
+        "source_url": "https://www.britishmuseum.org/collection/object/Y_EA24",
+        "source_type": "authoritative reference",
+        "tags": "writing and language",
+        "verified_at": "",
+        "latin_kind": "",
+        "primary_theme": "writing and language",
+        "source_language": "English",
+        "source_period": "196 BCE",
+        "source_confidence": "starter record; verify source",
+        "source_text": "",
+        "origin": "bundled starter library",
+        "verification_status": "review source before approval",
+        "note": "Verify the wording and linked source before approval.",
+        "ai_review": {},
+        "review_status": "unreviewed",
+        "reviewed_at": "",
+        "review_model": "",
+        "duplicate_warning": "",
+        "policy_warning": ""
+      },
+      "collection": "history_facts",
+      "post_text": "History note: The Rosetta Stone carries one decree in three writing systems.\n\nIts Greek, Demotic, and hieroglyphic texts became central to deciphering Egyptian hieroglyphs.\n\nSource: The British Museum, The Rosetta Stone",
+      "scheduled_for": "2026-07-29T21:21:00+00:00",
+      "status": "posted",
+      "created_at": "2026-07-29T00:37:50.556055+00:00",
+      "attempts": 1,
+      "claimed_at": "2026-07-29T21:21:06.348272+00:00",
+      "posted_at": "2026-07-29T21:21:08.429073+00:00",
+      "linkedin_post_id": "urn:li:share:7488342874330173440"
     }
   ],
   "events": [
@@ -2911,6 +2996,14 @@
       "at": "2026-07-29T21:21:06.348339+00:00",
       "level": "info",
       "message": "Claimed a scheduled post.",
+      "details": {
+        "queue_id": "a4bca9c1-ac11-43d3-bf30-43fdb25e110d"
+      }
+    },
+    {
+      "at": "2026-07-29T21:21:08.429165+00:00",
+      "level": "info",
+      "message": "Post published.",
       "details": {
         "queue_id": "a4bca9c1-ac11-43d3-bf30-43fdb25e110d"
       }
