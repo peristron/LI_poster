@@ -1,4 +1,4 @@
-"""li_poster 2.0.0: a reviewed, multi-collection LinkedIn scheduler."""
+"""li_poster 2.1.0: a reviewed, multi-collection LinkedIn scheduler."""
 
 from __future__ import annotations
 
@@ -36,7 +36,7 @@ st.set_page_config(
 # ---------------------------------------------------------------------------
 
 APP_NAME = "li_poster"
-APP_VERSION = "2.0.0"
+APP_VERSION = "2.1.0"
 GITHUB_API = "https://api.github.com"
 LINKEDIN_AUTHORIZE_URL = "https://www.linkedin.com/oauth/v2/authorization"
 LINKEDIN_TOKEN_URL = "https://www.linkedin.com/oauth/v2/accessToken"
@@ -54,7 +54,8 @@ MAX_METADATA_BACKFILL = 10
 WORKER_INTERVAL_SECONDS = 45
 WORKER_STALE_AFTER_SECONDS = 120
 STATE_VERIFY_ATTEMPTS = 5
-SCHEMA_VERSION = 6
+SCHEMA_VERSION = 7
+AUTOMATION_FOOTER = "(Automated post; reviewed before scheduling.)"
 COLLECTION_LATIN = "latin_sayings"
 COLLECTION_PHYSICS = "physics_facts"
 COLLECTION_HISTORY = "history_facts"
@@ -597,7 +598,7 @@ SEED_SAYINGS: list[dict[str, Any]] = [
     ),
 ]
 
-SEED_FACTS: list[dict[str, Any]] = [
+LEGACY_COMMON_FACTS: list[dict[str, Any]] = [
     seed_fact(
         "physics-speed-of-light",
         COLLECTION_PHYSICS,
@@ -775,6 +776,209 @@ SEED_FACTS: list[dict[str, Any]] = [
         "1959–1961 CE",
     ),
 ]
+
+# The current starter facts deliberately favor less familiar, well-sourced
+# details. They remain unapproved until an administrator follows the linked
+# institutional source and reviews the wording.
+SEED_FACTS: list[dict[str, Any]] = [
+    seed_fact(
+        "physics-gps-relativistic-clock-rate",
+        COLLECTION_PHYSICS,
+        "A GPS satellite clock would run about 38 microseconds per day faster than a clock on Earth without correction.",
+        "Special relativity slows it by about 7 microseconds per day, while weaker gravity speeds it by about 45.",
+        "NIST, Putting Einstein to the Test",
+        "Putting Einstein to the Test",
+        "https://www.nist.gov/atomic-clocks/a-powerful-tool-for-science/putting-einstein-test",
+        "relativistic timekeeping",
+        "modern physics",
+    ),
+    seed_fact(
+        "physics-ligo-proton-scale-displacement",
+        COLLECTION_PHYSICS,
+        "LIGO's first gravitational-wave signal changed the length of a four-kilometre detector arm by roughly one-thousandth of a proton's diameter.",
+        "Laser interferometry measured that minute distortion as two black holes merged more than a billion light-years away.",
+        "LIGO Laboratory, The First Detection of Gravitational Waves",
+        "The First Detection of Gravitational Waves",
+        "https://www.ligo.caltech.edu/video/ligo20160211v7",
+        "precision measurement",
+        "2015 CE",
+    ),
+    seed_fact(
+        "physics-caesium-second",
+        COLLECTION_PHYSICS,
+        "One SI second corresponds to exactly 9,192,631,770 periods of radiation from a specified caesium-133 transition.",
+        "The definition fixes a microscopic frequency rather than relying on Earth's variable rotation.",
+        "BIPM, SI base unit: second",
+        "SI base unit: second",
+        "https://www.bipm.org/en/si-base-units/second",
+        "atomic time",
+        "modern metrology",
+    ),
+    seed_fact(
+        "physics-kilogram-planck-constant",
+        COLLECTION_PHYSICS,
+        "The kilogram is defined by assigning the Planck constant an exact numerical value.",
+        "Since 2019, the SI definition has not depended on the mass of a particular metal cylinder.",
+        "BIPM, SI base unit: kilogram",
+        "SI base unit: kilogram",
+        "https://www.bipm.org/en/si-base-units/kilogram",
+        "quantum metrology",
+        "2019 CE onward",
+    ),
+    seed_fact(
+        "physics-moon-clock-rate",
+        COLLECTION_PHYSICS,
+        "A clock on the Moon's surface runs about 56 microseconds per Earth day faster than one on Earth.",
+        "The difference matters when designing a shared lunar time standard for navigation and communications.",
+        "NIST, What Time Is It on the Moon?",
+        "What Time Is It on the Moon?",
+        "https://www.nist.gov/news-events/news/2024/08/what-time-it-moon",
+        "lunar timekeeping",
+        "modern physics",
+    ),
+    seed_fact(
+        "physics-variable-length-of-day",
+        COLLECTION_PHYSICS,
+        "Earth's rotational day is not perfectly constant.",
+        "Atmospheric winds, ocean currents, motion in Earth's interior, and the Moon all exchange angular momentum with the planet.",
+        "NIST, What Determines the Length of the Day?",
+        "What Determines the Length of the Day?",
+        "https://www.nist.gov/physics/explainers/what-determines-length-day",
+        "Earth rotation",
+        "modern geophysics",
+    ),
+    seed_fact(
+        "physics-ligo-quantum-mirror-motion",
+        COLLECTION_PHYSICS,
+        "Quantum fluctuations can move each of LIGO's 40-kilogram mirrors by about 10^-20 metre.",
+        "The detector uses squeezed quantum states of light to reduce this measurement noise.",
+        "LIGO Laboratory, Quantum Squeezing",
+        "Quantum Squeezing Lets Gravity-Wave Detectors See More",
+        "https://www.ligo.caltech.edu/news/ligo20200701",
+        "quantum measurement",
+        "modern physics",
+    ),
+    seed_fact(
+        "physics-seven-defining-constants",
+        COLLECTION_PHYSICS,
+        "The modern SI is built from seven defining constants whose numerical values are exact.",
+        "Those constants include the speed of light, Planck constant, elementary charge, and caesium hyperfine frequency.",
+        "BIPM, SI defining constants",
+        "SI defining constants",
+        "https://www.bipm.org/en/measurement-units/si-defining-constants",
+        "measurement standards",
+        "2019 CE onward",
+    ),
+    seed_fact(
+        "history-ea-nasir-copper-complaint",
+        COLLECTION_HISTORY,
+        "A clay tablet from about 1750 BCE records Nanni's complaint to the merchant Ea-nasir about poor-quality copper.",
+        "The letter also objects to delays and the treatment of Nanni's messenger.",
+        "The British Museum, tablet 1953,0411.71",
+        "Clay tablet: letter from Nanni to Ea-nasir",
+        "https://www.britishmuseum.org/collection/object/W_1953-0411-71",
+        "commerce and writing",
+        "Old Babylonian, about 1750 BCE",
+    ),
+    seed_fact(
+        "history-pony-express-eighteen-months",
+        COLLECTION_HISTORY,
+        "The Pony Express operated for only eighteen months, from April 1860 to October 1861.",
+        "Its relay system could carry mail more than 1,800 miles in about ten days.",
+        "U.S. National Park Service, Pony Express National Historic Trail",
+        "Pony Express National Historic Trail",
+        "https://www.nps.gov/places/pony-express-national-historic-trail.htm",
+        "communications",
+        "1860–1861 CE",
+    ),
+    seed_fact(
+        "history-phonautogram-recovered-sound",
+        COLLECTION_HISTORY,
+        "A voice recorded on paper in 1860 became recoverable audio only in 2008.",
+        "Édouard-Léon Scott de Martinville's phonautograph traced sound waves but was not designed to play them back.",
+        "Library of Congress, Phonautograms",
+        "From the Recording Registry: Phonautograms (c. 1853–61)",
+        "https://blogs.loc.gov/now-see-hear/2021/08/from-the-recording-registry-phonautograms-c-1853-61/",
+        "recorded sound",
+        "1850s–1860 CE; recovered 2008",
+    ),
+    seed_fact(
+        "history-zimmermann-telegram-interception",
+        COLLECTION_HISTORY,
+        "British cryptographers deciphered the Zimmermann Telegram before the United States entered the First World War.",
+        "The message proposed a German-Mexican alliance and offered Mexico territory in Texas, New Mexico, and Arizona.",
+        "U.S. National Archives, Zimmermann Telegram",
+        "Zimmermann Telegram (1917)",
+        "https://www.archives.gov/milestone-documents/zimmermann-telegram",
+        "cryptography and diplomacy",
+        "1917 CE",
+    ),
+    seed_fact(
+        "history-pneumatic-tube-mail",
+        COLLECTION_HISTORY,
+        "By 1915, six U.S. cities had more than fifty-six miles of pneumatic tubes carrying mail beneath their streets.",
+        "Compressed air propelled sealed canisters between main and branch post offices.",
+        "Smithsonian National Postal Museum, Pneumatic",
+        "Pneumatic",
+        "https://postalmuseum.si.edu/exhibition/about-postal-operations-transportation/pneumatic",
+        "postal technology",
+        "1893–1953 CE",
+    ),
+    seed_fact(
+        "history-harrison-h4-five-ticks",
+        COLLECTION_HISTORY,
+        "John Harrison's H4 marine timekeeper ticks five times each second.",
+        "During its 1761 trial voyage, Harrison's son used it to predict an earlier landfall at Madeira than the ship's crew expected.",
+        "Royal Museums Greenwich, Longitude found",
+        "Longitude found: the story of Harrison's timekeepers",
+        "https://www.rmg.co.uk/stories/time/harrisons-clocks-longitude-problem",
+        "navigation and timekeeping",
+        "1761 CE",
+    ),
+    seed_fact(
+        "history-hollerith-electrical-census",
+        COLLECTION_HISTORY,
+        "Herman Hollerith's punched-card tabulator sensed holes using pins, mercury cups, and electrical circuits.",
+        "The system helped complete the 1890 U.S. census tabulation in one year after the 1880 census had taken eight.",
+        "Library of Congress, Hollerith's Electric Sorting and Tabulating Machine",
+        "Plate, punch card, and instructions for Herman Hollerith's Electric Sorting and Tabulating Machine",
+        "https://www.loc.gov/item/mcc.023/",
+        "data processing",
+        "late 19th century CE",
+    ),
+    seed_fact(
+        "history-standard-time-two-noons",
+        COLLECTION_HISTORY,
+        "When North American railroads adopted standard time in 1883, some communities briefly experienced two versions of noon.",
+        "One was local solar noon; the other was noon under the new railway time zone.",
+        "Smithsonian National Museum of American History, Synchronizing Time",
+        "Synchronizing Time: Time Zones",
+        "https://americanhistory.si.edu/ontime/synchronizing/zones.html",
+        "time standardization",
+        "1883 CE",
+    ),
+]
+
+COMMON_LATIN_SEED_IDS = {
+    "horace-odes-1-11",
+    "terence-heauton-77",
+    "juvenal-satire-6-347",
+    "juvenal-satire-10-81",
+    "juvenal-satire-10-356",
+    "catullus-85",
+    "suetonius-caesar-32",
+    "suetonius-caesar-37",
+}
+LEGACY_COMMON_LATIN = [
+    item for item in SEED_SAYINGS if item["id"] in COMMON_LATIN_SEED_IDS
+]
+SEED_SAYINGS = [
+    item for item in SEED_SAYINGS if item["id"] not in COMMON_LATIN_SEED_IDS
+]
+LEGACY_REPLACEABLE_SEEDS = {
+    item["id"]: item
+    for item in [*LEGACY_COMMON_LATIN, *LEGACY_COMMON_FACTS]
+}
 
 ALL_SEED_CONTENT = [*SEED_SAYINGS, *SEED_FACTS]
 
@@ -1099,11 +1303,48 @@ def normalize_saying(
     return normalized
 
 
-def merge_curated_library(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def is_untouched_replaceable_seed(raw: dict[str, Any]) -> bool:
+    """Return True only for an unchanged, unapproved bundled starter row."""
+    seed = LEGACY_REPLACEABLE_SEEDS.get(str(raw.get("id", "")))
+    if not seed or normalize_bool(raw.get("approved")):
+        return False
+    if normalize_space(raw.get("origin")) not in {
+        "",
+        normalize_space(seed.get("origin")),
+    }:
+        return False
+    fields = (
+        ("collection", "latin", "translation", "attribution")
+        if canonical_collection(seed.get("collection")) == COLLECTION_LATIN
+        else (
+            "collection",
+            "lead",
+            "body",
+            "attribution",
+            "source_url",
+        )
+    )
+    return all(
+        normalize_space(raw.get(field)).casefold()
+        == normalize_space(seed.get(field)).casefold()
+        for field in fields
+    )
+
+
+def merge_curated_library(
+    records: list[dict[str, Any]],
+    protected_ids: set[str] | None = None,
+) -> list[dict[str, Any]]:
+    protected_ids = protected_ids or set()
     seed_by_id = {seed["id"]: seed for seed in ALL_SEED_CONTENT}
     active: list[dict[str, Any]] = []
     for raw in records:
         if str(raw.get("id", "")) in RETIRED_SEED_IDS:
+            continue
+        if (
+            str(raw.get("id", "")) not in protected_ids
+            and is_untouched_replaceable_seed(raw)
+        ):
             continue
         record = normalize_saying(raw)
         seed = seed_by_id.get(record["id"])
@@ -1273,16 +1514,39 @@ def normalize_state(state: dict[str, Any]) -> dict[str, Any]:
     for key, value in defaults["linkedin"].items():
         state["linkedin"].setdefault(key, value)
     state.setdefault("oauth", {})
+    state.setdefault("queue", [])
+    state.setdefault("history", [])
+    protected_ids = {
+        normalize_space(item.get("saying_id"))
+        for item in [*state["queue"], *state["history"]]
+        if normalize_space(item.get("saying_id"))
+    }
     state["sayings"] = merge_curated_library(
-        list(state.get("sayings") or [])
+        list(state.get("sayings") or []),
+        protected_ids=protected_ids,
     )
     state.setdefault("ai_candidates", [])
     state["ai_candidates"] = normalize_ai_candidates(
         list(state["ai_candidates"] or []),
         state["sayings"],
     )
-    state.setdefault("queue", [])
-    state.setdefault("history", [])
+    sayings_by_id = {item["id"]: item for item in state["sayings"]}
+    for item in state["queue"]:
+        if item.get("status") not in {
+            "queued",
+            "publishing",
+            "needs_review",
+            "failed",
+        }:
+            continue
+        saying = sayings_by_id.get(
+            normalize_space(item.get("saying_id")),
+            item.get("saying_snapshot") or {},
+        )
+        source_text = item.get("post_text") or (
+            format_post(saying) if saying else ""
+        )
+        item["post_text"] = ensure_automation_footer(source_text)
     state.setdefault("events", [])
     return state
 
@@ -1299,6 +1563,18 @@ def append_event(
         event["details"] = details
     state["events"].append(event)
     state["events"] = state["events"][-MAX_EVENTS:]
+
+
+def ensure_automation_footer(value: Any) -> str:
+    """Append exactly one disclosure footer to a formatted post."""
+    text = str(value or "").strip()
+    footer_pattern = re.compile(
+        r"(?:\s*\n\s*)*\(Automated post; reviewed before scheduling\.\)\s*$",
+        flags=re.IGNORECASE,
+    )
+    while footer_pattern.search(text):
+        text = footer_pattern.sub("", text).strip()
+    return f"{text}\n\n{AUTOMATION_FOOTER}" if text else AUTOMATION_FOOTER
 
 
 def format_post(saying: dict[str, Any]) -> str:
@@ -1320,7 +1596,9 @@ def format_post(saying: dict[str, Any]) -> str:
             normalize_space(saying.get("body")),
             f"Source: {normalize_space(saying.get('attribution'))}",
         ]
-    return "\n\n".join(part for part in parts if part)
+    return ensure_automation_footer(
+        "\n\n".join(part for part in parts if part)
+    )
 
 
 def encrypt_value(value: str, key: str) -> str:
@@ -1529,7 +1807,10 @@ def generate_deepseek_facts(
     domain = "physics" if collection == COLLECTION_PHYSICS else "history"
     system_prompt = f"""
 You are a cautious {domain} research editor. Return JSON only. Propose concise,
-evergreen, secular fact candidates for a public LinkedIn post. Every factual
+evergreen, secular fact candidates for a public LinkedIn post. Prefer
+less-familiar details that reward a curious reader; avoid textbook-summary
+facts and famous headline examples unless the requested theme requires them.
+Every factual
 claim needs a checkable, authoritative source. Prefer primary institutions,
 standards bodies, museums, archives, universities, or peer-reviewed sources.
 Do not invent a quotation, citation, title, date, institution, or URL. Avoid
@@ -1592,7 +1873,8 @@ Return:
                     else "institutions, technology, daily life, discovery"
                 )
             )
-            + ". Keep each formatted post under 600 characters. Do not "
+            + ". Keep each formatted post under 600 characters including the "
+            "automatic disclosure footer. Do not "
             "duplicate these existing records: "
             + json.dumps(existing_compact, ensure_ascii=False)
         ),
@@ -1659,7 +1941,9 @@ def generate_deepseek_sayings(
     system_prompt = """
 You are a cautious classical-language editorial assistant. Return JSON only.
 Propose concise, secular sayings from ancient or pre-modern sources for human
-review. Latin and Greek material will usually be from antiquity. When Classical
+review. Prefer less-overused passages and avoid commonplace mottoes already
+widely circulated without context. Latin and Greek material will usually be
+from antiquity. When Classical
 Arabic is requested, material may come from the medieval Arabic intellectual
 tradition through 1500 CE, especially mathematics, medicine, optics, natural
 philosophy, ethics, and learning. Exclude scripture, prayers, theology,
@@ -1826,7 +2110,8 @@ Return this JSON shape:
                 ),
                 ". ",
                 source_instruction,
-                "Keep each finished Latin/translation/attribution post concise. ",
+                "Keep each finished Latin/translation/attribution post under ",
+                "600 characters including the automatic disclosure footer. ",
                 "Set source_confidence to low whenever the exact wording, work, ",
                 "or section is uncertain. Do not present a Latin translation as ",
                 "an original quotation. Do not duplicate or closely overlap any ",
@@ -2953,9 +3238,34 @@ class PosterWorker:
 
             self.store.update(stop_unapproved)
             return
-        post_text = str(claimed.get("post_text", "")).strip()
-        if not post_text:
-            post_text = format_post(saying)
+        post_text = ensure_automation_footer(
+            claimed.get("post_text") or format_post(saying)
+        )
+        max_post_chars = int(fresh["settings"].get("max_post_chars", 600))
+        if len(post_text) > max_post_chars:
+
+            def stop_oversized(current: dict[str, Any]) -> None:
+                item = next(
+                    row for row in current["queue"] if row["id"] == queue_id
+                )
+                item["status"] = "needs_review"
+                item["post_text"] = post_text
+                item["error"] = (
+                    "The formatted post, including its automation disclosure, "
+                    f"is {len(post_text)} characters; the configured maximum "
+                    f"is {max_post_chars}."
+                )
+                current["settings"]["automation_enabled"] = False
+                append_event(
+                    current,
+                    "warning",
+                    "Automation paused before an oversized post could publish.",
+                    queue_id=queue_id,
+                    characters=len(post_text),
+                )
+
+            self.store.update(stop_oversized)
+            return
         try:
             post_id = publish_linkedin_post(
                 decrypt_value(
@@ -2992,6 +3302,7 @@ class PosterWorker:
                 row for row in current["queue"] if row["id"] == queue_id
             )
             item["status"] = "posted"
+            item["post_text"] = post_text
             item["posted_at"] = datetime.now(timezone.utc).isoformat()
             item["linkedin_post_id"] = post_id
             current["history"].append(copy.deepcopy(item))
@@ -3318,12 +3629,19 @@ def render_dashboard(
 - Internal notes and verification status are never included in LinkedIn text.
 - Latin posts contain Latin, English translation, and attribution. Physics and
   history posts contain a labelled fact, short context, and source.
+- Every immediate and scheduled post ends with the discrete disclosure
+  `(Automated post; reviewed before scheduling.)`. The footer is added exactly
+  once, counts toward the configured character limit, and is rechecked by the
+  worker immediately before publication.
 - Removing or unapproving a scheduled item pauses automation before it can
   publish. Cancel and refill the queue after material library changes.
 - The scheduler avoids duplicate active queue entries for an item and rotates
   through approved material before reusing older entries.
 - Starter physics and history records are unapproved. Their URLs and wording
   are review leads, not a substitute for opening and checking the source.
+- Version 2.1 replaces untouched, unapproved commonplace starter rows with
+  less-familiar sourced material. Approved, edited, queued, posted, and
+  user-created records are preserved.
 - Collection weights influence randomized selection; they are not exact quotas.
 - DeepSeek requests use the API account configured by `DEEPSEEK_API_KEY` and
   may incur usage charges. The API key is never displayed or written to GitHub
