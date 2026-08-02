@@ -5,7 +5,8 @@
 ### Human-reviewed, multi-collection LinkedIn publishing
 
 Prepare, verify, schedule, and publish Latin sayings, physics facts, and
-history facts without treating AI generation as source verification.
+history facts in  neutral, broadly appropriate language without
+treating AI generation as source verification.
 
 [![Python 3.12](https://img.shields.io/badge/python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Streamlit](https://img.shields.io/badge/built%20with-Streamlit-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
@@ -28,8 +29,10 @@ history facts without treating AI generation as source verification.
 
 `li_poster` is a self-contained Streamlit application that prepares, reviews,
 schedules, and publishes short reviewed posts to a connected LinkedIn member
-profile. Version 2.0 introduces three independently reviewable collections:
-Latin sayings, physics facts, and history facts.
+profile. Version 2.1 provides three independently reviewable collections:
+Latin sayings, physics facts, and history facts. It also adds a consistent
+automation disclosure to every post and refreshes untouched starter material
+with less-familiar, source-led entries.
 
 Latin posts use this structure:
 
@@ -39,6 +42,8 @@ Latin text
 English translation
 
 — attribution
+
+(Automated post; reviewed before scheduling.)
 ```
 
 Physics and history posts use this structure:
@@ -49,6 +54,8 @@ Physics note: concise fact
 Short explanation or context
 
 Source: checkable attribution
+
+(Automated post; reviewed before scheduling.)
 ```
 
 The application combines a curated library, optional DeepSeek editorial
@@ -77,7 +84,7 @@ application brings those concerns into one inspectable interface.
 It is especially useful when you want to:
 
 1. maintain reviewed Latin, physics, and history collections;
-2. translate secular sayings into Latin;
+2. translate sayings written in  neutral language into Latin;
 3. explore pre-modern material from Latin, Greek, Chinese, Arabic, and other
    traditions;
 4. randomize post dates and times inside controlled limits;
@@ -94,10 +101,11 @@ It is especially useful when you want to:
 | Content library | Review, edit, approve, import, and export three content collections | Only approved entries can be scheduled |
 | DeepSeek workshop | Generate collection-specific candidates, translate Latin, and review candidates | AI output is never automatically approved or published |
 | Source-language controls | Prefer, balance, or require a source language | The label is model-produced until independently verified |
-| Secular-content policy | Screens publishable fields for excluded religious or theological language | The filter is conservative and cannot replace editorial judgment |
+| Content-suitability policy | Screens publishable fields for explicitly religious or theological language | The filter supports  neutral output but cannot replace editorial judgment |
 | Scheduling | Randomizes eligible weekdays and times, enabled collections, and weighted content mix | Timing is approximate on Streamlit Community Cloud |
 | LinkedIn connection | OAuth 2.0 connection to a LinkedIn member profile | The associated LinkedIn Page is not the posting destination |
 | Publishing safety | Dry-run, pause, queue inspection, claims, and uncertain-result handling | A connections-only test is a real immediate post |
+| Automation disclosure | Appends a short parenthetical footer to every immediate and scheduled post | The footer counts toward the configured character limit |
 | Persistence | Stores operational state on a separate GitHub branch | Repository visibility affects non-secret state visibility |
 | Token protection | Encrypts the LinkedIn access token with Fernet before persistence | Losing or rotating the key requires reconnection |
 | Activity history | Records connection, library, queue, and publishing events | Logs may contain operational metadata |
@@ -110,6 +118,20 @@ wording, translation, and Latin classification. Fact records use a lead,
 explanation/context, source title, URL, type, tags, and verification date.
 
 Internal review metadata is not included in the LinkedIn post.
+
+### Bundled starter material
+
+Bundled records are starting points for review, not pre-approved publishing
+inventory. Version 2.1 favors less-familiar material over commonplace trivia:
+
+| Collection | Editorial direction | Review expectation |
+|---|---|---|
+| Latin sayings | Short original or carefully classified Latin, with translation and attribution | Check the wording and cited edition |
+| Physics facts | Measurement, timekeeping, relativity, metrology, and other less-obvious details | Open the institutional source and confirm the numerical or scientific claim |
+| History facts | Communication, instruments, recordkeeping, cryptography, and overlooked historical details | Confirm the date, context, attribution, and source wording |
+
+Every bundled record begins unapproved. The application does not equate a
+plausible institutional citation with completed verification.
 
 ## How it works
 
@@ -138,7 +160,8 @@ The deployed Streamlit process starts a background worker. Approximately every
 3. confirms that LinkedIn is connected and the token has not expired;
 4. finds and claims the next due queued item;
 5. confirms that the underlying content item remains approved;
-6. publishes the post through LinkedIn;
+6. normalizes the disclosure footer, checks the final character count, and
+   publishes the post through LinkedIn;
 7. records the result; and
 8. replenishes the randomized schedule when appropriate.
 
@@ -165,7 +188,7 @@ The deployed Streamlit process starts a background worker. Approximately every
 
 | Item | Current value |
 |---|---|
-| Application version | 2.0.0 |
+| Application version | 2.1.0 |
 | Main application file | `streamlit_app.py` |
 | Supported Python version | Python 3.12 |
 | Streamlit URL used during setup | `https://liposter.streamlit.app/` |
@@ -176,6 +199,7 @@ The deployed Streamlit process starts a background worker. Approximately every
 | Background worker interval | Approximately 45 seconds while awake |
 | Default timezone | `America/Toronto` |
 | Recommended initial mode | Automation paused and dry-run on |
+| Automated-post footer | `(Automated post; reviewed before scheduling.)` |
 
 ## Repository structure
 
@@ -188,21 +212,22 @@ LI_poster/
 └── streamlit_app.py   # Complete monolithic Streamlit application
 ```
 
-## Upgrading from 1.4
+## Upgrading to 2.1
 
 No new Python package, Streamlit secret, LinkedIn product, OAuth scope, redirect
 URI, or GitHub branch is required. Replace `streamlit_app.py` and keep the
 existing `requirements.txt` and Streamlit Secrets.
 
-On first load, schema version 6:
+On first load, schema version 7:
 
-1. preserves existing Latin IDs, approvals, AI candidates, queue, history,
-   LinkedIn connection, and schedule settings;
-2. labels legacy records as `latin_sayings`;
-3. adds eight physics and eight history starter records as **unapproved**;
-4. adds enabled-collection and collection-weight defaults; and
-5. uses versioned Streamlit resource caches so a hot deployment does not reuse
-   the older state-store or worker object.
+1. preserves approved, edited, queued, posted, imported, AI-generated, and
+   user-created records;
+2. replaces only untouched, unapproved commonplace starter rows with
+   less-familiar source-led material;
+3. adds the automation disclosure exactly once to active queued post text;
+4. leaves posted and cancelled history unchanged; and
+5. rechecks the complete final post, including the footer, against the
+   configured character limit immediately before publication.
 
 Pause automation and cancel any queued post before deploying a major-version
 change. After deployment, confirm **Worker: Active**, inspect all new starter
@@ -298,7 +323,7 @@ Before deployment, prepare:
 The application writes runtime information to a `runtime-state` branch. That
 state includes:
 
-- sayings and AI candidates;
+- content-library records and AI candidates;
 - schedule settings and queued posts;
 - posting history and application events;
 - the LinkedIn display name;
@@ -533,7 +558,7 @@ Optional:
 - `DEEPSEEK_API_KEY`
 - `DEEPSEEK_MODEL`
 
-Without the DeepSeek key, LinkedIn, scheduling, CSV, and manual sayings features
+Without the DeepSeek key, LinkedIn, scheduling, CSV, and manual content features
 continue to work. Only the AI workshop is disabled.
 
 ## 10. Connect the LinkedIn member account
@@ -574,46 +599,45 @@ Keep the application safe while validating the complete setup:
 1. Confirm the Dashboard shows **LinkedIn: Connected**.
 2. Confirm **Automation: Paused**.
 3. Confirm **Dry-run mode is on**.
-4. Open **Sayings**.
-5. Review several bundled sayings.
-6. Approve only sayings that have been independently checked.
-7. Select **Save sayings**.
+4. Open **Content library**.
+5. Review several bundled records across the enabled collections.
+6. Approve only records whose wording and source have been independently
+   checked.
+7. Select **Save content** and wait for the persistent saved-and-verified
+   confirmation.
 8. Open **Schedule**.
 9. Save conservative schedule settings.
 10. Select **Fill randomized schedule**.
 11. Inspect every queued post on the Dashboard.
 12. Optionally publish one connections-only test from **LinkedIn and setup**.
-13. Verify the post directly on LinkedIn.
+13. Verify the post directly on LinkedIn, including the parenthetical
+    automated-post disclosure.
 14. Keep automation paused until the queue, visibility, and post formatting are
     confirmed.
 
 The connections-only test is a real immediate LinkedIn post. It bypasses
 dry-run mode and requires explicit confirmation in the interface.
 
-## Using the sayings library
+## Using the content library
 
-Open **Sayings** to review and edit:
+Open **Content library** to review and edit:
 
-- approval status;
-- Latin text;
-- English translation;
-- attribution;
-- Latin classification;
-- primary theme;
-- source language;
-- source period;
-- source confidence;
-- source text;
-- origin;
-- verification status; and
-- internal notes.
+- approval status and collection;
+- fact lead and explanation/context for physics and history records;
+- Latin text and English translation for Latin records;
+- attribution, source title, and source URL;
+- Latin classification, when applicable;
+- primary theme, source language, and source period;
+- source confidence and original source text;
+- origin, verification status, and internal notes; and
+- collection-specific tags and dates.
 
 Only approved entries can be scheduled.
 
 Internal notes, verification status, AI assessments, source confidence, and
 duplicate warnings are not included in LinkedIn posts.
 
-### Secular wording policy
+### Content-suitability wording policy
 
 The application scans publishable or source-supporting fields:
 
@@ -624,39 +648,44 @@ The application scans publishable or source-supporting fields:
 
 It does not scan internal notes.
 
-When excluded religious or theological wording is detected:
+When explicitly religious or theological wording covered by the policy is
+detected:
 
 - newly generated candidates are rejected;
 - older staged candidates are marked `reject`;
 - library entries are unapproved and blocked by the policy; and
 - the warning identifies the exact field and matched wording.
 
-The filter is intentionally conservative. Human review remains necessary.
+The filter is intentionally conservative and is intended to support
+ neutral, broadly appropriate output. Human review remains
+necessary, and the filter should not be interpreted as a judgment about the
+source tradition itself.
 
 ## Importing and exporting CSV
 
 ### Export
 
-Select **Download sayings CSV** to obtain the complete current library.
+Select **Download content CSV** to obtain the complete current library.
 
 ### Import
 
-1. Expand **Import sayings from CSV**.
+1. Expand **Import content from CSV**.
 2. Upload a UTF-8 CSV.
-3. Confirm the required columns:
+3. Use the downloaded schema and confirm at minimum that every row has:
 
 ```text
-latin
-translation
+collection
 attribution
 ```
 
-4. Optionally include the other exported fields.
-5. Select **Import CSV as unapproved**.
-6. Review all imported rows.
+4. For `latin_sayings`, provide `latin`, `translation`, and `attribution`.
+5. For `physics_facts` and `history_facts`, provide `lead`, `body`,
+   `attribution`, and `source_title`.
+6. Select **Import CSV as unapproved**.
+7. Review all imported rows.
 
 Imported entries are always unapproved. Exact and near duplicates are skipped.
-Content conflicting with the secular wording policy is blocked.
+Content conflicting with the content-suitability wording policy is blocked.
 
 ## DeepSeek AI and source verification
 
@@ -675,18 +704,23 @@ Generated or translated content:
 Each DeepSeek request uses the configured API account and may incur usage
 charges.
 
-### Suggest sayings
+### Generate content
 
 Configure:
 
+- collection (`Latin sayings`, `Physics facts`, or `History facts`);
 - number of candidates;
 - required primary theme, if any;
 - optional supporting themes;
-- source-language mode;
-- required source language, when applicable; and
-- preferred source languages.
+- for Latin sayings, source-language mode;
+- for Latin sayings, required source language when applicable; and
+- for Latin sayings, preferred source languages.
 
-#### Source-language modes
+Physics and history generation requires source-led, less-familiar material
+with an authoritative attribution and URL. The source-language controls are
+ignored for these two fact collections.
+
+#### Latin source-language modes
 
 **One required source language**
 
@@ -718,8 +752,8 @@ The listed languages guide DeepSeek but do not guarantee coverage.
 ### Classical Arabic sources
 
 Classical Arabic intellectual material is often medieval rather than ancient.
-The application permits secular pre-modern Arabic sources through 1500 CE,
-especially material associated with:
+The application permits  neutral pre-modern Arabic intellectual
+sources through 1500 CE, especially material associated with:
 
 - mathematics;
 - medicine;
@@ -799,7 +833,7 @@ user-supplied text.
    - translation assessment;
    - attribution assessment;
    - source assessment;
-   - secularity assessment;
+   - content-suitability assessment;
    - recommended action;
    - proposed corrections; and
    - review status.
@@ -840,15 +874,38 @@ their Latin, translation, or attribution. Low-confidence candidates are marked
 1. Review the candidate table.
 2. Check `review_status`, `source_confidence`, `policy_warning`, and
    `duplicate_warning`.
-3. Independently verify the source and Latin.
+3. Independently verify the source, factual claim, and any Latin wording that
+   applies.
 4. Select **add to library** for acceptable candidates.
 5. If a candidate is marked `caution`, enable the explicit caution override.
 6. Select **Add selected candidates as unapproved**.
 7. Review the new library entries.
 8. Approve them only after verification.
-9. Select **Save sayings**.
+9. Select **Save content**.
 
 `reject` candidates cannot be added.
+
+## Automated-post disclosure
+
+Every post created by the application ends with:
+
+```text
+(Automated post; reviewed before scheduling.)
+```
+
+The disclosure is deliberately short and separate from the substantive
+content. The application:
+
+- adds it to immediate test posts and scheduled posts;
+- normalizes the final text so the footer appears exactly once;
+- includes it in saved queue text, immediate-post previews, and character-count
+  validation;
+- rechecks the complete post immediately before publication; and
+- pauses automation and moves an oversized item to `needs_review` rather than
+  publishing it.
+
+When upgrading to v2.1, active queued text is normalized to include the footer.
+Existing posted and cancelled history is retained exactly as recorded.
 
 ## Scheduling
 
@@ -863,6 +920,8 @@ Open **Schedule** and configure:
 - minimum spacing in hours;
 - maximum post characters;
 - LinkedIn visibility; and
+- enabled content collections;
+- relative collection weights; and
 - dry-run mode.
 
 Visibility options:
@@ -877,7 +936,9 @@ The scheduler:
 - randomizes eligible days and times;
 - respects the configured timezone;
 - respects minimum spacing;
-- avoids two active queue entries for the same saying;
+- selects only from enabled collections;
+- uses collection weights to influence, but not guarantee, the content mix;
+- avoids two active queue entries for the same content item;
 - rotates through approved material before recent reuse;
 - accounts for already queued and recently posted entries; and
 - stops adding entries when there is not enough eligible approved content.
@@ -895,7 +956,7 @@ When dry-run is on:
 ### Going live
 
 1. Pause automation.
-2. Review approved sayings.
+2. Review approved content.
 3. Cancel obsolete queued items.
 4. Save schedule settings.
 5. Fill and inspect the randomized queue.
@@ -939,6 +1000,7 @@ Common queue statuses:
 - `queued`
 - `publishing`
 - `posted`
+- `cancelled`
 - `failed`
 - `needs_review`
 - `dismissed`
@@ -986,7 +1048,7 @@ The new encrypted token replaces the old one.
 7. Confirm the displayed application version.
 8. Confirm GitHub state loads.
 9. Confirm LinkedIn remains connected.
-10. Confirm approved sayings, queue, history, and settings remain present.
+10. Confirm approved content, queue, history, and settings remain present.
 11. Keep dry-run on while testing changed scheduling or posting behavior.
 
 Application updates preserve runtime state because it is maintained separately
@@ -1031,7 +1093,7 @@ To rotate:
 
 ### DeepSeek key
 
-Replace `DEEPSEEK_API_KEY` and restart. Existing sayings, candidates, and
+Replace `DEEPSEEK_API_KEY` and restart. Existing content, candidates, and
 LinkedIn functionality remain available.
 
 ## Troubleshooting
@@ -1175,7 +1237,7 @@ wording. Internal notes are not scanned.
 
 Confirm:
 
-- enough sayings are approved;
+- enough content is approved in the enabled collections;
 - allowed weekdays cover the requested frequency;
 - the schedule horizon is long enough;
 - minimum spacing is not too large;
@@ -1189,7 +1251,7 @@ from GitHub before the app reports success. Wait for the persistent
 **saved and verified** confirmation rather than selecting the button
 repeatedly.
 
-The Sayings editor separately reports:
+The Content library editor separately reports:
 
 - how many approvals are currently selected in the editor; and
 - how many approvals are saved in GitHub state.
@@ -1240,8 +1302,8 @@ always-on scheduler or hosting service.
 - DeepSeek output can be incorrect or incomplete.
 - AI source citations require independent verification.
 - A language model cannot guarantee classical-text accuracy.
-- The local secular-language filter is conservative and not linguistically
-  exhaustive.
+- The local content-suitability filter is conservative, supports  
+ neutral output, and is not linguistically exhaustive.
 - The app currently posts to a connected member profile, not a company Page.
 - The app supports three text collections, not images, documents, live news,
   arbitrary campaigns, or exact per-collection quotas.
