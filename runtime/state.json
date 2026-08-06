@@ -1,6 +1,6 @@
 {
   "schema_version": 7,
-  "revision": 50,
+  "revision": 51,
   "settings": {
     "automation_enabled": true,
     "dry_run": false,
@@ -2507,10 +2507,12 @@
       "collection": "latin_sayings",
       "post_text": "Amicus certus in re incerta cernitur.\n\nA sure friend is recognized in uncertain circumstances.\n\n— Ennius, fragment quoted by Cicero, De Amicitia 64\n\n(Automated post; reviewed before scheduling.)",
       "scheduled_for": "2026-08-06T21:26:00+00:00",
-      "status": "publishing",
+      "status": "posted",
       "created_at": "2026-07-29T21:21:08.429179+00:00",
       "attempts": 1,
-      "claimed_at": "2026-08-06T21:26:34.042532+00:00"
+      "claimed_at": "2026-08-06T21:26:34.042532+00:00",
+      "posted_at": "2026-08-06T21:26:36.137376+00:00",
+      "linkedin_post_id": "urn:li:share:7491243352009531392"
     },
     {
       "id": "ec364502-0223-4c37-af54-ecbb2c2c6913",
@@ -2912,6 +2914,49 @@
       "claimed_at": "2026-08-05T21:20:14.210919+00:00",
       "posted_at": "2026-08-05T21:20:16.524085+00:00",
       "linkedin_post_id": "urn:li:share:7490879371671506944"
+    },
+    {
+      "id": "a966c3be-570d-4c61-9f80-5b2fa8687ce8",
+      "saying_id": "ennius-amicus-certus",
+      "saying_snapshot": {
+        "id": "ennius-amicus-certus",
+        "approved": true,
+        "collection": "latin_sayings",
+        "lead": "",
+        "body": "",
+        "latin": "Amicus certus in re incerta cernitur.",
+        "translation": "A sure friend is recognized in uncertain circumstances.",
+        "attribution": "Ennius, fragment quoted by Cicero, De Amicitia 64",
+        "source_title": "Ennius, fragment quoted by Cicero, De Amicitia 64",
+        "source_url": "",
+        "source_type": "primary text",
+        "tags": "",
+        "verified_at": "",
+        "latin_kind": "original Latin",
+        "primary_theme": "",
+        "source_language": "Latin",
+        "source_period": "antiquity",
+        "source_confidence": "curated; verify edition",
+        "source_text": "",
+        "origin": "bundled curated library",
+        "verification_status": "review source before approval",
+        "note": "",
+        "ai_review": {},
+        "review_status": "unreviewed",
+        "reviewed_at": "",
+        "review_model": "",
+        "duplicate_warning": "",
+        "policy_warning": ""
+      },
+      "collection": "latin_sayings",
+      "post_text": "Amicus certus in re incerta cernitur.\n\nA sure friend is recognized in uncertain circumstances.\n\n— Ennius, fragment quoted by Cicero, De Amicitia 64\n\n(Automated post; reviewed before scheduling.)",
+      "scheduled_for": "2026-08-06T21:26:00+00:00",
+      "status": "posted",
+      "created_at": "2026-07-29T21:21:08.429179+00:00",
+      "attempts": 1,
+      "claimed_at": "2026-08-06T21:26:34.042532+00:00",
+      "posted_at": "2026-08-06T21:26:36.137376+00:00",
+      "linkedin_post_id": "urn:li:share:7491243352009531392"
     }
   ],
   "events": [
@@ -3198,6 +3243,14 @@
       "at": "2026-08-06T21:26:34.042587+00:00",
       "level": "info",
       "message": "Claimed a scheduled post.",
+      "details": {
+        "queue_id": "a966c3be-570d-4c61-9f80-5b2fa8687ce8"
+      }
+    },
+    {
+      "at": "2026-08-06T21:26:36.137499+00:00",
+      "level": "info",
+      "message": "Post published.",
       "details": {
         "queue_id": "a966c3be-570d-4c61-9f80-5b2fa8687ce8"
       }
