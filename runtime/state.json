@@ -1,6 +1,6 @@
 {
   "schema_version": 7,
-  "revision": 53,
+  "revision": 54,
   "settings": {
     "automation_enabled": true,
     "dry_run": false,
@@ -672,7 +672,7 @@
     },
     {
       "id": "horace-satires-1-1-106",
-      "approved": false,
+      "approved": true,
       "collection": "latin_sayings",
       "lead": "",
       "body": "",
@@ -1002,7 +1002,7 @@
     },
     {
       "id": "virgil-aeneid-5-231",
-      "approved": false,
+      "approved": true,
       "collection": "latin_sayings",
       "lead": "",
       "body": "",
@@ -1572,7 +1572,7 @@
     },
     {
       "id": "tacitus-annals-1-1",
-      "approved": false,
+      "approved": true,
       "collection": "latin_sayings",
       "lead": "",
       "body": "",
@@ -3332,6 +3332,14 @@
       "details": {
         "added": 2,
         "duplicates_skipped": 0
+      }
+    },
+    {
+      "at": "2026-08-07T19:58:38.863093+00:00",
+      "level": "info",
+      "message": "Content library updated.",
+      "details": {
+        "count": 77
       }
     }
   ],
