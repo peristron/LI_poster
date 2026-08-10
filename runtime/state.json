@@ -1,6 +1,6 @@
 {
   "schema_version": 7,
-  "revision": 57,
+  "revision": 58,
   "settings": {
     "automation_enabled": true,
     "dry_run": false,
@@ -2653,10 +2653,12 @@
       "collection": "physics_facts",
       "post_text": "Physics note: Radio waves, visible light, and X-rays are all electromagnetic radiation.\n\nThey differ in wavelength, frequency, and energy, but all belong to the same spectrum.\n\nSource: NASA Science, Electromagnetic Spectrum\n\n(Automated post; reviewed before scheduling.)",
       "scheduled_for": "2026-08-10T20:01:00+00:00",
-      "status": "publishing",
+      "status": "posted",
       "created_at": "2026-08-01T00:52:05.856868+00:00",
       "attempts": 1,
-      "claimed_at": "2026-08-10T20:01:27.388567+00:00"
+      "claimed_at": "2026-08-10T20:01:27.388567+00:00",
+      "posted_at": "2026-08-10T20:01:29.709120+00:00",
+      "linkedin_post_id": "urn:li:share:7492671485279408128"
     },
     {
       "id": "45910ff0-7f43-47de-9d0e-46b628170eda",
@@ -2856,6 +2858,46 @@
       "scheduled_for": "2026-08-19T20:14:00+00:00",
       "status": "queued",
       "created_at": "2026-08-05T21:20:16.524172+00:00",
+      "attempts": 0
+    },
+    {
+      "id": "650968fd-c562-442a-93a9-00323943c92c",
+      "saying_id": "horace-satires-1-1-106",
+      "saying_snapshot": {
+        "id": "horace-satires-1-1-106",
+        "approved": true,
+        "collection": "latin_sayings",
+        "lead": "",
+        "body": "",
+        "latin": "Est modus in rebus.",
+        "translation": "There is a proper measure in things.",
+        "attribution": "Horace, Satires 1.1.106",
+        "source_title": "Horace, Satires 1.1.106",
+        "source_url": "",
+        "source_type": "primary text",
+        "tags": "",
+        "verified_at": "",
+        "latin_kind": "original Latin",
+        "primary_theme": "",
+        "source_language": "Latin",
+        "source_period": "antiquity",
+        "source_confidence": "curated; verify edition",
+        "source_text": "",
+        "origin": "bundled curated library",
+        "verification_status": "review source before approval",
+        "note": "",
+        "ai_review": {},
+        "review_status": "unreviewed",
+        "reviewed_at": "",
+        "review_model": "",
+        "duplicate_warning": "",
+        "policy_warning": ""
+      },
+      "collection": "latin_sayings",
+      "post_text": "Est modus in rebus.\n\nThere is a proper measure in things.\n\n— Horace, Satires 1.1.106\n\n(Automated post; reviewed before scheduling.)",
+      "scheduled_for": "2026-08-24T19:49:00+00:00",
+      "status": "queued",
+      "created_at": "2026-08-10T20:01:29.709212+00:00",
       "attempts": 0
     }
   ],
@@ -3064,6 +3106,49 @@
       "claimed_at": "2026-08-07T22:32:28.548119+00:00",
       "posted_at": "2026-08-07T22:32:30.636300+00:00",
       "linkedin_post_id": "urn:li:share:7491622325965217792"
+    },
+    {
+      "id": "7c0e04b0-b0c4-49e3-aa9f-f0e93be73649",
+      "saying_id": "physics-electromagnetic-spectrum",
+      "saying_snapshot": {
+        "id": "physics-electromagnetic-spectrum",
+        "approved": true,
+        "collection": "physics_facts",
+        "lead": "Radio waves, visible light, and X-rays are all electromagnetic radiation.",
+        "body": "They differ in wavelength, frequency, and energy, but all belong to the same spectrum.",
+        "latin": "",
+        "translation": "",
+        "attribution": "NASA Science, Electromagnetic Spectrum",
+        "source_title": "The Electromagnetic Spectrum",
+        "source_url": "https://science.nasa.gov/ems/",
+        "source_type": "authoritative reference",
+        "tags": "electromagnetism",
+        "verified_at": "",
+        "latin_kind": "",
+        "primary_theme": "electromagnetism",
+        "source_language": "English",
+        "source_period": "modern physics",
+        "source_confidence": "starter record; verify source",
+        "source_text": "",
+        "origin": "bundled starter library",
+        "verification_status": "review source before approval",
+        "note": "Verify the wording and linked source before approval.",
+        "ai_review": {},
+        "review_status": "unreviewed",
+        "reviewed_at": "",
+        "review_model": "",
+        "duplicate_warning": "",
+        "policy_warning": ""
+      },
+      "collection": "physics_facts",
+      "post_text": "Physics note: Radio waves, visible light, and X-rays are all electromagnetic radiation.\n\nThey differ in wavelength, frequency, and energy, but all belong to the same spectrum.\n\nSource: NASA Science, Electromagnetic Spectrum\n\n(Automated post; reviewed before scheduling.)",
+      "scheduled_for": "2026-08-10T20:01:00+00:00",
+      "status": "posted",
+      "created_at": "2026-08-01T00:52:05.856868+00:00",
+      "attempts": 1,
+      "claimed_at": "2026-08-10T20:01:27.388567+00:00",
+      "posted_at": "2026-08-10T20:01:29.709120+00:00",
+      "linkedin_post_id": "urn:li:share:7492671485279408128"
     }
   ],
   "events": [
@@ -3409,6 +3494,14 @@
       "at": "2026-08-10T20:01:27.388631+00:00",
       "level": "info",
       "message": "Claimed a scheduled post.",
+      "details": {
+        "queue_id": "7c0e04b0-b0c4-49e3-aa9f-f0e93be73649"
+      }
+    },
+    {
+      "at": "2026-08-10T20:01:29.709204+00:00",
+      "level": "info",
+      "message": "Post published.",
       "details": {
         "queue_id": "7c0e04b0-b0c4-49e3-aa9f-f0e93be73649"
       }
