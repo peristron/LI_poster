@@ -1,6 +1,6 @@
 {
   "schema_version": 7,
-  "revision": 59,
+  "revision": 60,
   "settings": {
     "automation_enabled": true,
     "dry_run": false,
@@ -2696,10 +2696,12 @@
       "collection": "history_facts",
       "post_text": "History note: A voice recorded on paper in 1860 became recoverable audio only in 2008.\n\nÉdouard-Léon Scott de Martinville's phonautograph traced sound waves but was not designed to play them back.\n\nSource: Library of Congress, Phonautograms\n\n(Automated post; reviewed before scheduling.)",
       "scheduled_for": "2026-08-11T22:47:00+00:00",
-      "status": "publishing",
+      "status": "posted",
       "created_at": "2026-08-01T00:52:05.856868+00:00",
       "attempts": 1,
-      "claimed_at": "2026-08-11T22:47:32.162778+00:00"
+      "claimed_at": "2026-08-11T22:47:32.162778+00:00",
+      "posted_at": "2026-08-11T22:47:34.259617+00:00",
+      "linkedin_post_id": "urn:li:share:7493075667643891712"
     },
     {
       "id": "bea7cc30-ecec-43a3-824d-d48ab25b920e",
@@ -2899,6 +2901,46 @@
       "scheduled_for": "2026-08-24T19:49:00+00:00",
       "status": "queued",
       "created_at": "2026-08-10T20:01:29.709212+00:00",
+      "attempts": 0
+    },
+    {
+      "id": "f07e2b3b-e1f7-4b38-a57c-08f9e472fbd2",
+      "saying_id": "seneca-ep-1",
+      "saying_snapshot": {
+        "id": "seneca-ep-1",
+        "approved": true,
+        "collection": "latin_sayings",
+        "lead": "",
+        "body": "",
+        "latin": "Dum differtur, vita transcurrit.",
+        "translation": "While it is postponed, life passes by.",
+        "attribution": "Seneca, Epistulae Morales 1.2",
+        "source_title": "Seneca, Epistulae Morales 1.2",
+        "source_url": "",
+        "source_type": "primary text",
+        "tags": "",
+        "verified_at": "",
+        "latin_kind": "original Latin",
+        "primary_theme": "",
+        "source_language": "Latin",
+        "source_period": "antiquity",
+        "source_confidence": "curated; verify edition",
+        "source_text": "",
+        "origin": "bundled curated library",
+        "verification_status": "review source before approval",
+        "note": "",
+        "ai_review": {},
+        "review_status": "unreviewed",
+        "reviewed_at": "",
+        "review_model": "",
+        "duplicate_warning": "",
+        "policy_warning": ""
+      },
+      "collection": "latin_sayings",
+      "post_text": "Dum differtur, vita transcurrit.\n\nWhile it is postponed, life passes by.\n\n— Seneca, Epistulae Morales 1.2\n\n(Automated post; reviewed before scheduling.)",
+      "scheduled_for": "2026-08-25T21:45:00+00:00",
+      "status": "queued",
+      "created_at": "2026-08-11T22:47:34.259726+00:00",
       "attempts": 0
     }
   ],
@@ -3150,6 +3192,49 @@
       "claimed_at": "2026-08-10T20:01:27.388567+00:00",
       "posted_at": "2026-08-10T20:01:29.709120+00:00",
       "linkedin_post_id": "urn:li:share:7492671485279408128"
+    },
+    {
+      "id": "45910ff0-7f43-47de-9d0e-46b628170eda",
+      "saying_id": "history-phonautogram-recovered-sound",
+      "saying_snapshot": {
+        "id": "history-phonautogram-recovered-sound",
+        "approved": true,
+        "collection": "history_facts",
+        "lead": "A voice recorded on paper in 1860 became recoverable audio only in 2008.",
+        "body": "Édouard-Léon Scott de Martinville's phonautograph traced sound waves but was not designed to play them back.",
+        "latin": "",
+        "translation": "",
+        "attribution": "Library of Congress, Phonautograms",
+        "source_title": "From the Recording Registry: Phonautograms (c. 1853–61)",
+        "source_url": "https://blogs.loc.gov/now-see-hear/2021/08/from-the-recording-registry-phonautograms-c-1853-61/",
+        "source_type": "authoritative reference",
+        "tags": "recorded sound",
+        "verified_at": "",
+        "latin_kind": "",
+        "primary_theme": "recorded sound",
+        "source_language": "English",
+        "source_period": "1850s–1860 CE; recovered 2008",
+        "source_confidence": "starter record; verify source",
+        "source_text": "",
+        "origin": "bundled starter library",
+        "verification_status": "review source before approval",
+        "note": "Verify the wording and linked source before approval.",
+        "ai_review": {},
+        "review_status": "unreviewed",
+        "reviewed_at": "",
+        "review_model": "",
+        "duplicate_warning": "",
+        "policy_warning": ""
+      },
+      "collection": "history_facts",
+      "post_text": "History note: A voice recorded on paper in 1860 became recoverable audio only in 2008.\n\nÉdouard-Léon Scott de Martinville's phonautograph traced sound waves but was not designed to play them back.\n\nSource: Library of Congress, Phonautograms\n\n(Automated post; reviewed before scheduling.)",
+      "scheduled_for": "2026-08-11T22:47:00+00:00",
+      "status": "posted",
+      "created_at": "2026-08-01T00:52:05.856868+00:00",
+      "attempts": 1,
+      "claimed_at": "2026-08-11T22:47:32.162778+00:00",
+      "posted_at": "2026-08-11T22:47:34.259617+00:00",
+      "linkedin_post_id": "urn:li:share:7493075667643891712"
     }
   ],
   "events": [
@@ -3511,6 +3596,14 @@
       "at": "2026-08-11T22:47:32.162834+00:00",
       "level": "info",
       "message": "Claimed a scheduled post.",
+      "details": {
+        "queue_id": "45910ff0-7f43-47de-9d0e-46b628170eda"
+      }
+    },
+    {
+      "at": "2026-08-11T22:47:34.259713+00:00",
+      "level": "info",
+      "message": "Post published.",
       "details": {
         "queue_id": "45910ff0-7f43-47de-9d0e-46b628170eda"
       }
