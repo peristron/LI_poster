@@ -1,6 +1,6 @@
 {
   "schema_version": 7,
-  "revision": 71,
+  "revision": 72,
   "settings": {
     "automation_enabled": true,
     "dry_run": false,
@@ -2954,10 +2954,12 @@
       "collection": "latin_sayings",
       "post_text": "Possunt, quia posse videntur.\n\nThey can because they believe they can.\n\n— Virgil, Aeneid 5.231\n\n(Automated post; reviewed before scheduling.)",
       "scheduled_for": "2026-08-20T20:22:00+00:00",
-      "status": "publishing",
+      "status": "posted",
       "created_at": "2026-08-19T20:14:40.250280+00:00",
       "attempts": 1,
-      "claimed_at": "2026-08-20T20:22:14.442242+00:00"
+      "claimed_at": "2026-08-20T20:22:14.442242+00:00",
+      "posted_at": "2026-08-20T20:22:16.734693+00:00",
+      "linkedin_post_id": "urn:li:share:7496300594110873600"
     },
     {
       "id": "e40893fc-7650-45dc-a957-3f45d85f19e0",
@@ -3746,6 +3748,49 @@
       "claimed_at": "2026-08-19T20:14:37.887816+00:00",
       "posted_at": "2026-08-19T20:14:40.250198+00:00",
       "linkedin_post_id": "urn:li:share:7495936291960791040"
+    },
+    {
+      "id": "cca3548f-62b1-4567-b2ca-7939a455f7cb",
+      "saying_id": "virgil-aeneid-5-231",
+      "saying_snapshot": {
+        "id": "virgil-aeneid-5-231",
+        "approved": true,
+        "collection": "latin_sayings",
+        "lead": "",
+        "body": "",
+        "latin": "Possunt, quia posse videntur.",
+        "translation": "They can because they believe they can.",
+        "attribution": "Virgil, Aeneid 5.231",
+        "source_title": "Virgil, Aeneid 5.231",
+        "source_url": "",
+        "source_type": "primary text",
+        "tags": "",
+        "verified_at": "",
+        "latin_kind": "original Latin",
+        "primary_theme": "",
+        "source_language": "Latin",
+        "source_period": "antiquity",
+        "source_confidence": "curated; verify edition",
+        "source_text": "",
+        "origin": "bundled curated library",
+        "verification_status": "review source before approval",
+        "note": "",
+        "ai_review": {},
+        "review_status": "unreviewed",
+        "reviewed_at": "",
+        "review_model": "",
+        "duplicate_warning": "",
+        "policy_warning": ""
+      },
+      "collection": "latin_sayings",
+      "post_text": "Possunt, quia posse videntur.\n\nThey can because they believe they can.\n\n— Virgil, Aeneid 5.231\n\n(Automated post; reviewed before scheduling.)",
+      "scheduled_for": "2026-08-20T20:22:00+00:00",
+      "status": "posted",
+      "created_at": "2026-08-19T20:14:40.250280+00:00",
+      "attempts": 1,
+      "claimed_at": "2026-08-20T20:22:14.442242+00:00",
+      "posted_at": "2026-08-20T20:22:16.734693+00:00",
+      "linkedin_post_id": "urn:li:share:7496300594110873600"
     }
   ],
   "events": [
@@ -4203,6 +4248,14 @@
       "at": "2026-08-20T20:22:14.442294+00:00",
       "level": "info",
       "message": "Claimed a scheduled post.",
+      "details": {
+        "queue_id": "cca3548f-62b1-4567-b2ca-7939a455f7cb"
+      }
+    },
+    {
+      "at": "2026-08-20T20:22:16.734759+00:00",
+      "level": "info",
+      "message": "Post published.",
       "details": {
         "queue_id": "cca3548f-62b1-4567-b2ca-7939a455f7cb"
       }
