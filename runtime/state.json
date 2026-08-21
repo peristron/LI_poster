@@ -1,6 +1,6 @@
 {
   "schema_version": 7,
-  "revision": 72,
+  "revision": 73,
   "settings": {
     "automation_enabled": true,
     "dry_run": false,
@@ -2997,9 +2997,10 @@
       "collection": "latin_sayings",
       "post_text": "Ignoranti quem portum petat nullus suus ventus est.\n\nNo wind is favorable to one who does not know which harbour to seek.\n\n— Seneca, Epistulae Morales 71.3\n\n(Automated post; reviewed before scheduling.)",
       "scheduled_for": "2026-08-21T21:19:00+00:00",
-      "status": "queued",
+      "status": "publishing",
       "created_at": "2026-08-19T20:14:40.250280+00:00",
-      "attempts": 0
+      "attempts": 1,
+      "claimed_at": "2026-08-21T21:19:21.260722+00:00"
     },
     {
       "id": "650968fd-c562-442a-93a9-00323943c92c",
@@ -4258,6 +4259,14 @@
       "message": "Post published.",
       "details": {
         "queue_id": "cca3548f-62b1-4567-b2ca-7939a455f7cb"
+      }
+    },
+    {
+      "at": "2026-08-21T21:19:21.260775+00:00",
+      "level": "info",
+      "message": "Claimed a scheduled post.",
+      "details": {
+        "queue_id": "e40893fc-7650-45dc-a957-3f45d85f19e0"
       }
     }
   ],
