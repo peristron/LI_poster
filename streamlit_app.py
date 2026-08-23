@@ -1,4 +1,4 @@
-"""li_poster 2.1.0: a reviewed, multi-collection LinkedIn scheduler."""
+"""li_poster 2.2.0: a reviewed, multi-collection LinkedIn scheduler."""
 
 from __future__ import annotations
 
@@ -36,14 +36,43 @@ st.set_page_config(
 # ---------------------------------------------------------------------------
 
 APP_NAME = "li_poster"
-APP_VERSION = "2.1.0"
+APP_VERSION = "2.2.0"
 GITHUB_API = "https://api.github.com"
 LINKEDIN_AUTHORIZE_URL = "https://www.linkedin.com/oauth/v2/authorization"
 LINKEDIN_TOKEN_URL = "https://www.linkedin.com/oauth/v2/accessToken"
 LINKEDIN_USERINFO_URL = "https://api.linkedin.com/v2/userinfo"
 LINKEDIN_POST_URL = "https://api.linkedin.com/v2/ugcPosts"
-DEEPSEEK_API_URL = "https://api.deepseek.com/chat/completions"
-DEFAULT_DEEPSEEK_MODEL = "deepseek-v4-flash"
+DEFAULT_AI_PROVIDER = "Mistral"
+AI_PROVIDERS: dict[str, dict[str, str]] = {
+    "Mistral": {
+        "api_key_secret": "MISTRAL_API_KEY",
+        "model_secret": "MISTRAL_MODEL",
+        "default_model": "mistral-small-latest",
+        "api_url": "https://api.mistral.ai/v1/chat/completions",
+        "json_mode": "true",
+    },
+    "Z.AI (GLM)": {
+        "api_key_secret": "GLM_API_KEY",
+        "model_secret": "GLM_MODEL",
+        "default_model": "glm-4.7-flash",
+        "api_url": "https://api.z.ai/api/paas/v4/chat/completions",
+        "json_mode": "false",
+    },
+    "Cohere": {
+        "api_key_secret": "COHERE_API_KEY",
+        "model_secret": "COHERE_MODEL",
+        "default_model": "command-a-plus-05-2026",
+        "api_url": "https://api.cohere.ai/compatibility/v1/chat/completions",
+        "json_mode": "true",
+    },
+    "DeepSeek": {
+        "api_key_secret": "DEEPSEEK_API_KEY",
+        "model_secret": "DEEPSEEK_MODEL",
+        "default_model": "deepseek-v4-flash",
+        "api_url": "https://api.deepseek.com/chat/completions",
+        "json_mode": "true",
+    },
+}
 STATE_BRANCH = "runtime-state"
 STATE_PATH = "runtime/state.json"
 MAX_EVENTS = 500
@@ -596,6 +625,63 @@ SEED_SAYINGS: list[dict[str, Any]] = [
         "Classical Chinese",
         note="Compare the Classical Chinese original before approval.",
     ),
+    seed_saying(
+        "seneca-brevitate-1-1",
+        "Non exiguum temporis habemus, sed multum perdidimus.",
+        "We do not have too little time; we have lost much of it.",
+        "Seneca, De Brevitate Vitae 1.1",
+        primary_theme="time",
+    ),
+    seed_saying(
+        "seneca-ep-3-2",
+        "Tu omnia cum amico delibera, sed de ipso prius.",
+        "Discuss everything with a friend, but first deliberate about the friend.",
+        "Seneca, Epistulae Morales 3.2",
+        primary_theme="friendship and judgment",
+    ),
+    seed_saying(
+        "seneca-ep-28-1",
+        "Animum debes mutare, non caelum.",
+        "You must change your disposition, not your sky.",
+        "Seneca, Epistulae Morales 28.1",
+        primary_theme="self-knowledge",
+    ),
+    seed_saying(
+        "horace-ep-1-18-71",
+        "Et semel emissum volat irrevocabile verbum.",
+        "Once released, a word flies beyond recall.",
+        "Horace, Epistles 1.18.71",
+        primary_theme="speech",
+    ),
+    seed_saying(
+        "virgil-georgics-2-490",
+        "Felix qui potuit rerum cognoscere causas.",
+        "Fortunate is the one who has been able to know the causes of things.",
+        "Virgil, Georgics 2.490",
+        primary_theme="inquiry",
+    ),
+    seed_saying(
+        "sallust-catilina-1-2",
+        "Sed nostra omnis vis in animo et corpore sita est.",
+        "All our strength is situated in mind and body.",
+        "Sallust, Bellum Catilinae 1.2",
+        primary_theme="human capacity",
+    ),
+    seed_saying(
+        "pliny-ep-3-5-10",
+        "Nullum esse librum tam malum ut non in aliqua parte prodesset.",
+        "No book is so bad that it is not useful in some part.",
+        "Pliny the Younger, Epistulae 3.5.10",
+        note="Pliny reports this as his uncle's view in indirect speech.",
+        primary_theme="reading",
+    ),
+    seed_saying(
+        "quintilian-inst-10-7-15",
+        "Pectus est enim quod disertos facit.",
+        "It is the heart that makes people eloquent.",
+        "Quintilian, Institutio Oratoria 10.7.15",
+        primary_theme="expression",
+    ),
 ]
 
 LEGACY_COMMON_FACTS: list[dict[str, Any]] = [
@@ -1001,6 +1087,28 @@ def read_secrets() -> dict[str, str]:
     except FileNotFoundError:
         raw = {}
     return {str(key): str(value).strip() for key, value in raw.items()}
+
+
+def configured_ai_providers(config: dict[str, str]) -> list[str]:
+    """Return configured providers in display order, with Mistral first."""
+    return [
+        name
+        for name, provider in AI_PROVIDERS.items()
+        if config.get(provider["api_key_secret"])
+    ]
+
+
+def ai_provider_credentials(
+    config: dict[str, str],
+    provider_name: str,
+) -> tuple[str, str]:
+    provider = AI_PROVIDERS[provider_name]
+    api_key = config.get(provider["api_key_secret"], "")
+    model = (
+        config.get(provider["model_secret"], provider["default_model"])
+        or provider["default_model"]
+    )
+    return api_key, model
 
 
 def required_secret_names() -> list[str]:
@@ -1419,7 +1527,7 @@ def normalize_ai_candidates(
     for raw in records:
         candidate = normalize_saying(
             raw,
-            default_origin="DeepSeek candidate",
+            default_origin="AI candidate",
         )
         policy_hits = religious_language_hits(candidate)
         if policy_hits:
@@ -1615,10 +1723,10 @@ def decrypt_value(value: str, key: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# DeepSeek-assisted candidate generation and review
+# AI-assisted candidate generation and review
 # ---------------------------------------------------------------------------
 
-class DeepSeekError(RuntimeError):
+class AIProviderError(RuntimeError):
     pass
 
 
@@ -1630,15 +1738,18 @@ def parse_json_object(value: str) -> dict[str, Any]:
     try:
         parsed = json.loads(text)
     except json.JSONDecodeError as exc:
-        raise DeepSeekError(
-            "DeepSeek returned a response that was not valid JSON."
+        raise AIProviderError(
+            "The AI provider returned a response that was not valid JSON."
         ) from exc
     if not isinstance(parsed, dict):
-        raise DeepSeekError("DeepSeek returned an unexpected JSON structure.")
+        raise AIProviderError(
+            "The AI provider returned an unexpected JSON structure."
+        )
     return parsed
 
 
-def call_deepseek_json(
+def call_ai_json(
+    provider_name: str,
     api_key: str,
     model: str,
     system_prompt: str,
@@ -1646,9 +1757,13 @@ def call_deepseek_json(
     *,
     max_tokens: int = 3000,
 ) -> dict[str, Any]:
+    provider = AI_PROVIDERS.get(provider_name)
+    if not provider:
+        raise AIProviderError("Select a supported AI provider.")
     if not api_key:
-        raise DeepSeekError(
-            "Add DEEPSEEK_API_KEY to Streamlit Secrets before using AI tools."
+        raise AIProviderError(
+            f"Add {provider['api_key_secret']} to Streamlit Secrets before "
+            "using this AI provider."
         )
     token_budgets = [
         int(max_tokens),
@@ -1657,20 +1772,22 @@ def call_deepseek_json(
     last_retryable_error = ""
     for attempt, token_budget in enumerate(token_budgets, start=1):
         payload = {
-            "model": model or DEFAULT_DEEPSEEK_MODEL,
+            "model": model or provider["default_model"],
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
             ],
-            "response_format": {"type": "json_object"},
-            "thinking": {"type": "disabled"},
             "temperature": 0.2,
             "max_tokens": token_budget,
             "stream": False,
         }
+        if provider.get("json_mode") == "true":
+            payload["response_format"] = {"type": "json_object"}
+        if provider_name == "DeepSeek":
+            payload["thinking"] = {"type": "disabled"}
         try:
             response = requests.post(
-                DEEPSEEK_API_URL,
+                provider["api_url"],
                 headers={
                     "Authorization": f"Bearer {api_key}",
                     "Content-Type": "application/json",
@@ -1679,45 +1796,48 @@ def call_deepseek_json(
                 timeout=90,
             )
         except requests.Timeout as exc:
-            raise DeepSeekError(
-                "DeepSeek timed out. No candidates were saved; try a smaller request."
+            raise AIProviderError(
+                f"{provider_name} timed out. No candidates were saved; "
+                "try a smaller request."
             ) from exc
         except requests.RequestException as exc:
-            raise DeepSeekError(f"DeepSeek request failed: {exc}") from exc
+            raise AIProviderError(
+                f"{provider_name} request failed: {exc}"
+            ) from exc
         if response.status_code != 200:
             messages = {
-                401: "DeepSeek rejected the API key.",
-                402: "The DeepSeek account has insufficient balance.",
-                429: "DeepSeek is temporarily rate-limiting this account.",
+                401: f"{provider_name} rejected the API key.",
+                402: f"The {provider_name} account has insufficient balance.",
+                429: f"{provider_name} is temporarily rate-limiting this account.",
             }
             detail = messages.get(
                 response.status_code,
-                f"DeepSeek returned HTTP {response.status_code}.",
+                f"{provider_name} returned HTTP {response.status_code}.",
             )
-            raise DeepSeekError(detail)
+            raise AIProviderError(detail)
         try:
             body = response.json()
             choice = body["choices"][0]
             finish_reason = normalize_space(choice.get("finish_reason"))
             content = choice["message"]["content"]
         except (KeyError, IndexError, TypeError, ValueError) as exc:
-            raise DeepSeekError(
-                "DeepSeek returned an incomplete response."
+            raise AIProviderError(
+                f"{provider_name} returned an incomplete response."
             ) from exc
         if finish_reason == "length":
             last_retryable_error = (
-                "DeepSeek reached its generated-output limit."
+                f"{provider_name} reached its generated-output limit."
             )
         elif not str(content or "").strip():
-            last_retryable_error = "DeepSeek returned an empty response."
+            last_retryable_error = f"{provider_name} returned an empty response."
         else:
             try:
                 return parse_json_object(str(content))
-            except DeepSeekError as exc:
+            except AIProviderError as exc:
                 last_retryable_error = str(exc)
         if attempt == 1:
             continue
-    raise DeepSeekError(
+    raise AIProviderError(
         f"{last_retryable_error} The app retried once with a larger output "
         "allowance and saved nothing. Try fewer candidates."
     )
@@ -1791,7 +1911,8 @@ def validate_ai_candidate(
     return candidate
 
 
-def generate_deepseek_facts(
+def generate_ai_facts(
+    provider_name: str,
     api_key: str,
     model: str,
     collection: str,
@@ -1803,7 +1924,7 @@ def generate_deepseek_facts(
     """Generate source-led physics or history candidates for human review."""
     collection = canonical_collection(collection)
     if collection not in {COLLECTION_PHYSICS, COLLECTION_HISTORY}:
-        raise DeepSeekError("Select Physics facts or History facts.")
+        raise AIProviderError("Select Physics facts or History facts.")
     domain = "physics" if collection == COLLECTION_PHYSICS else "history"
     system_prompt = f"""
 You are a cautious {domain} research editor. Return JSON only. Propose concise,
@@ -1857,7 +1978,8 @@ Return:
         if normalize_space(required_theme)
         else ""
     )
-    parsed = call_deepseek_json(
+    parsed = call_ai_json(
+        provider_name,
         api_key,
         model,
         system_prompt,
@@ -1882,7 +2004,9 @@ Return:
     )
     raw_candidates = parsed.get("candidates")
     if not isinstance(raw_candidates, list):
-        raise DeepSeekError("DeepSeek did not return a candidate list.")
+        raise AIProviderError(
+            f"{provider_name} did not return a candidate list."
+        )
     accepted: list[dict[str, Any]] = []
     warnings: list[str] = []
     required_theme_key = latin_search_key(required_theme)
@@ -1893,7 +2017,7 @@ Return:
             raw["collection"] = collection
             candidate = validate_ai_candidate(
                 raw,
-                origin=f"DeepSeek {domain} suggestion ({model})",
+                origin=f"{provider_name} {domain} suggestion ({model})",
             )
             if (
                 required_theme_key
@@ -1918,7 +2042,7 @@ Return:
             warnings.append(f"Candidate {index + 1} was skipped: {exc}")
     if not accepted:
         detail = f" First rejection: {warnings[0]}" if warnings else ""
-        raise DeepSeekError(f"No usable {domain} candidates were returned.{detail}")
+        raise AIProviderError(f"No usable {domain} candidates were returned.{detail}")
     if len(accepted) < quantity:
         warnings.append(
             f"Staged {len(accepted)} of {quantity} requested candidates; "
@@ -1927,7 +2051,8 @@ Return:
     return accepted[:quantity], warnings
 
 
-def generate_deepseek_sayings(
+def generate_ai_sayings(
+    provider_name: str,
     api_key: str,
     model: str,
     quantity: int,
@@ -1979,7 +2104,7 @@ Return this JSON shape:
 """.strip()
     quantity = int(quantity)
     if source_mode not in SOURCE_MODES:
-        raise DeepSeekError("Select a valid source-language mode.")
+        raise AIProviderError("Select a valid source-language mode.")
     preferred_languages = [
         canonical_language(item)
         for item in parse_list_terms(source_preferences)
@@ -1987,11 +2112,11 @@ Return this JSON shape:
     preferred_languages = list(dict.fromkeys(preferred_languages))
     required_language = canonical_language(required_source_language)
     if source_mode == SOURCE_MODE_REQUIRED and not required_language:
-        raise DeepSeekError(
+        raise AIProviderError(
             "Enter a required source language or select another source mode."
         )
     if source_mode == SOURCE_MODE_BALANCED and not preferred_languages:
-        raise DeepSeekError(
+        raise AIProviderError(
             "Enter at least one preferred source language for balanced coverage."
         )
     if (
@@ -1999,7 +2124,7 @@ Return this JSON shape:
         and preferred_languages
         and quantity < len(preferred_languages)
     ):
-        raise DeepSeekError(
+        raise AIProviderError(
             "Balanced source coverage needs at least "
             f"{len(preferred_languages)} candidates for the "
             f"{len(preferred_languages)} listed source languages. Increase "
@@ -2119,7 +2244,8 @@ Return this JSON shape:
                 json.dumps(existing_compact, ensure_ascii=False),
             ]
         )
-        parsed = call_deepseek_json(
+        parsed = call_ai_json(
+            provider_name,
             api_key,
             model,
             system_prompt,
@@ -2158,7 +2284,7 @@ Return this JSON shape:
                     )
                 candidate = validate_ai_candidate(
                     raw,
-                    origin=f"DeepSeek suggestion ({model})",
+                    origin=f"{provider_name} suggestion ({model})",
                 )
                 candidate_language = canonical_language(
                     candidate["source_language"]
@@ -2216,8 +2342,8 @@ Return this JSON shape:
             break
     if not candidates:
         detail = f" First rejection: {warnings[0]}" if warnings else ""
-        raise DeepSeekError(
-            "DeepSeek returned no usable secular candidates after automatic "
+        raise AIProviderError(
+            f"{provider_name} returned no usable secular candidates after automatic "
             f"replacement attempts.{detail}"
         )
     candidates = candidates[:quantity]
@@ -2238,7 +2364,8 @@ Return this JSON shape:
     return candidates, list(dict.fromkeys(warnings))
 
 
-def translate_with_deepseek(
+def translate_with_ai(
+    provider_name: str,
     api_key: str,
     model: str,
     source_text: str,
@@ -2271,7 +2398,7 @@ Return this JSON shape:
 """.strip()
     safe_text = str(source_text or "").strip()[:4000]
     if not safe_text:
-        raise DeepSeekError("Enter text to translate.")
+        raise AIProviderError("Enter text to translate.")
     user_prompt = json.dumps(
         {
             "source_text": safe_text,
@@ -2281,7 +2408,8 @@ Return this JSON shape:
         },
         ensure_ascii=False,
     )
-    parsed = call_deepseek_json(
+    parsed = call_ai_json(
+        provider_name,
         api_key,
         model,
         system_prompt,
@@ -2290,17 +2418,20 @@ Return this JSON shape:
     )
     raw = parsed.get("candidate")
     if not isinstance(raw, dict):
-        raise DeepSeekError("DeepSeek did not return a translation candidate.")
+        raise AIProviderError(
+            f"{provider_name} did not return a translation candidate."
+        )
     raw["attribution"] = normalize_space(attribution) or "User-supplied text"
     raw["source_text"] = safe_text
     raw["source_language"] = normalize_space(source_language) or "unknown"
     return validate_ai_candidate(
         raw,
-        origin=f"DeepSeek translation ({model})",
+        origin=f"{provider_name} translation ({model})",
     )
 
 
-def review_with_deepseek(
+def review_with_ai(
+    provider_name: str,
     api_key: str,
     model: str,
     candidate: dict[str, Any],
@@ -2359,7 +2490,8 @@ Return:
   "correction_reason": ""
 }
 """.strip()
-    parsed = call_deepseek_json(
+    parsed = call_ai_json(
+        provider_name,
         api_key,
         model,
         system_prompt,
@@ -2377,11 +2509,13 @@ Return:
         "recommended_action",
     ]
     if any(not normalize_space(parsed.get(field)) for field in required):
-        raise DeepSeekError("DeepSeek returned an incomplete review.")
+        raise AIProviderError(f"{provider_name} returned an incomplete review.")
     result = {field: normalize_space(parsed[field]) for field in required}
     result["overall"] = result["overall"].casefold()
     if result["overall"] not in {"pass", "caution", "reject"}:
-        raise DeepSeekError("DeepSeek returned an invalid review status.")
+        raise AIProviderError(
+            f"{provider_name} returned an invalid review status."
+        )
     for field in (
         "corrected_latin",
         "corrected_translation",
@@ -2396,7 +2530,8 @@ Return:
     return result
 
 
-def backfill_candidate_metadata_with_deepseek(
+def backfill_candidate_metadata_with_ai(
+    provider_name: str,
     api_key: str,
     model: str,
     candidates: list[dict[str, Any]],
@@ -2447,7 +2582,8 @@ Return:
         }
         for item in pending
     ]
-    parsed = call_deepseek_json(
+    parsed = call_ai_json(
+        provider_name,
         api_key,
         model,
         system_prompt,
@@ -2457,7 +2593,9 @@ Return:
     )
     raw_updates = parsed.get("updates")
     if not isinstance(raw_updates, list):
-        raise DeepSeekError("DeepSeek did not return a metadata update list.")
+        raise AIProviderError(
+            f"{provider_name} did not return a metadata update list."
+        )
     allowed_ids = {item["id"] for item in pending}
     updates: dict[str, dict[str, str]] = {}
     warnings: list[str] = []
@@ -2496,8 +2634,8 @@ Return:
             continue
         updates[candidate_id] = fields
     if not updates:
-        raise DeepSeekError(
-            "DeepSeek returned no usable metadata updates."
+        raise AIProviderError(
+            f"{provider_name} returned no usable metadata updates."
         )
     return updates, warnings
 
@@ -3611,7 +3749,7 @@ def render_dashboard(
    persistent “saved and verified” confirmation.
 3. Optionally use **Import content from CSV**. Imported rows are forced to
    unapproved status.
-4. Optionally use the **DeepSeek AI workshop**. Generated and translated
+4. Optionally use the **AI workshop**. Generated and translated
    material is staged separately and can enter the library only as unapproved
    content. AI review is useful editorial assistance, not source verification.
 5. Open **Schedule**. Choose the weekly range, allowed days, randomized time
@@ -3642,10 +3780,12 @@ def render_dashboard(
 - Version 2.1 replaces untouched, unapproved commonplace starter rows with
   less-familiar sourced material. Approved, edited, queued, posted, and
   user-created records are preserved.
+- Version 2.2 adds eight unapproved Latin starter sayings and selectable AI
+  providers. Existing library records and DeepSeek-only settings are preserved.
 - Collection weights influence randomized selection; they are not exact quotas.
-- DeepSeek requests use the API account configured by `DEEPSEEK_API_KEY` and
-  may incur usage charges. The API key is never displayed or written to GitHub
-  runtime state.
+- AI requests use the selected configured provider and may incur usage charges.
+  API keys are never displayed or written to GitHub runtime state. Mistral is
+  selected by default when its key is configured.
 - Generation requests include a compact copy of the existing library to reduce
   repeats. Local near-duplicate checks can still flag a result after it returns.
 - **Required primary theme** makes every result focus on one theme. Optional
@@ -3659,9 +3799,10 @@ def render_dashboard(
   Classical Arabic sources may be medieval rather than ancient; the app allows
   secular pre-modern Arabic intellectual sources through 1500 CE and labels
   the period explicitly.
-- DeepSeek structured requests disable model thinking to preserve the generated
-  JSON allowance. A truncated, empty, or malformed response is retried once
-  with a larger allowance before the app reports an error.
+- Providers with documented JSON mode use it for structured requests. DeepSeek
+  requests also disable model thinking. A truncated, empty, or malformed
+  response is retried once with a larger allowance before the app reports an
+  error.
 - Candidate generation makes up to three generation attempts to replace
   filtered, duplicate, off-theme, or wrong-language results. If the requested
   total still cannot be reached, valid partial results are staged with a
@@ -3672,7 +3813,7 @@ def render_dashboard(
 - Older staged candidates are rescanned under the current policy. Conflicting
   wording is marked `reject`. The optional metadata-maintenance action can fill
   missing theme, source period, language, and confidence for up to ten legacy
-  candidates per DeepSeek request without changing their wording.
+  candidates per AI request without changing their wording.
 - AI reviews are saved with each staged candidate. A `caution` result requires
   an explicit override before it can be added as unapproved; a `reject` result
   cannot be added. A proposed correction becomes a separate unreviewed
@@ -3708,10 +3849,10 @@ def render_dashboard(
 - **Stored LinkedIn credential cannot be decrypted:** restore the original
   `FERNET_KEY`. If it was intentionally replaced, reconnect LinkedIn to store a
   token encrypted with the new key.
-- **DeepSeek 401:** replace an invalid API key. **402:** check the DeepSeek
-  balance. **429:** wait and retry. A truncated, empty, or malformed result is
-  retried once automatically; if the second attempt fails, request fewer
-  candidates.
+- **AI provider 401:** replace the selected provider's invalid API key.
+  **402:** check that account's balance. **429:** wait and retry. A truncated,
+  empty, or malformed result is retried once automatically; if the second
+  attempt fails, request fewer candidates.
 - **A requested language is missing:** select **One required source language**
   to guarantee one language, or select **Balanced coverage** and request at
   least as many candidates as there are preferred languages.
@@ -3839,7 +3980,7 @@ def stage_ai_candidates(
     for raw in candidates:
         candidate = normalize_saying(
             raw,
-            default_origin="DeepSeek candidate",
+            default_origin="AI candidate",
         )
         policy_hits = religious_language_hits(candidate)
         if policy_hits:
@@ -3878,7 +4019,7 @@ def stage_ai_candidates(
     append_event(
         current,
         "info",
-        "DeepSeek candidates staged for human review.",
+        "AI candidates staged for human review.",
         added=added,
         duplicates_skipped=duplicates,
         near_duplicate_warnings=warnings,
@@ -4069,27 +4210,38 @@ def render_sayings(
             except (ValueError, pd.errors.ParserError) as exc:
                 st.error(f"CSV import failed: {exc}")
 
-    with st.expander("DeepSeek AI workshop"):
-        model = (
-            config.get("DEEPSEEK_MODEL", DEFAULT_DEEPSEEK_MODEL)
-            or DEFAULT_DEEPSEEK_MODEL
-        )
-        api_key = config.get("DEEPSEEK_API_KEY", "")
-        if not api_key:
+    with st.expander("AI workshop"):
+        available_providers = configured_ai_providers(config)
+        if not available_providers:
             st.warning(
-                "AI tools are disabled. Add DEEPSEEK_API_KEY to Streamlit "
-                "Secrets and allow the app to restart."
+                "AI tools are disabled. Add at least one supported AI API key "
+                "to Streamlit Secrets and allow the app to restart."
             )
         else:
+            default_index = (
+                available_providers.index(DEFAULT_AI_PROVIDER)
+                if DEFAULT_AI_PROVIDER in available_providers
+                else 0
+            )
+            provider_name = st.selectbox(
+                "AI provider",
+                options=available_providers,
+                index=default_index,
+                help=(
+                    "Only providers with a configured API key appear here. "
+                    "Mistral is the default when it is configured."
+                ),
+            )
+            api_key, model = ai_provider_credentials(config, provider_name)
             st.caption(
-                f"Model: {model}. Each request uses your DeepSeek API account. "
+                f"Model: {model}. Each request uses your {provider_name} account. "
                 "AI output is never approved, scheduled, or published automatically."
             )
             generate_tab, translate_tab, review_tab = st.tabs(
                 ["Generate content", "Translate into Latin", "Review candidate"]
             )
             with generate_tab:
-                with st.form("deepseek_generate_form"):
+                with st.form("ai_generate_form"):
                     generation_collection = st.selectbox(
                         "Collection",
                         options=COLLECTION_KEYS,
@@ -4147,19 +4299,20 @@ def render_sayings(
                     )
                     if generation_collection != COLLECTION_LATIN:
                         st.caption(
-                            "For fact collections, DeepSeek uses authoritative "
+                            f"For fact collections, {provider_name} uses authoritative "
                             "source requirements; the source-language controls "
                             "above are ignored."
                         )
                     generate = st.form_submit_button(
-                        "Ask DeepSeek for candidates",
+                        f"Ask {provider_name} for candidates",
                         type="primary",
                     )
                 if generate:
                     try:
-                        with st.spinner("DeepSeek is preparing candidates..."):
+                        with st.spinner(f"{provider_name} is preparing candidates..."):
                             if generation_collection == COLLECTION_LATIN:
-                                candidates, warnings = generate_deepseek_sayings(
+                                candidates, warnings = generate_ai_sayings(
+                                    provider_name,
                                     api_key,
                                     model,
                                     int(quantity),
@@ -4171,7 +4324,8 @@ def render_sayings(
                                     state["sayings"] + state["ai_candidates"],
                                 )
                             else:
-                                candidates, warnings = generate_deepseek_facts(
+                                candidates, warnings = generate_ai_facts(
+                                    provider_name,
                                     api_key,
                                     model,
                                     generation_collection,
@@ -4197,16 +4351,16 @@ def render_sayings(
                             )
                         if warnings:
                             st.session_state["sayings_warning"] = (
-                                "DeepSeek generation notes:\n\n- "
+                                f"{provider_name} generation notes:\n\n- "
                                 + "\n- ".join(warnings)
                             )
                         st.session_state["sayings_notice"] = message
                         st.rerun()
-                    except DeepSeekError as exc:
+                    except AIProviderError as exc:
                         st.error(str(exc))
 
             with translate_tab:
-                with st.form("deepseek_translate_form"):
+                with st.form("ai_translate_form"):
                     source_text = st.text_area(
                         "Text to translate into Latin",
                         max_chars=4000,
@@ -4223,13 +4377,14 @@ def render_sayings(
                         ),
                     )
                     translate = st.form_submit_button(
-                        "Ask DeepSeek to translate",
+                        f"Ask {provider_name} to translate",
                         type="primary",
                     )
                 if translate:
                     try:
-                        with st.spinner("DeepSeek is translating..."):
-                            candidate = translate_with_deepseek(
+                        with st.spinner(f"{provider_name} is translating..."):
+                            candidate = translate_with_ai(
+                                provider_name,
                                 api_key,
                                 model,
                                 source_text,
@@ -4252,7 +4407,7 @@ def render_sayings(
                                 "near-duplicate(s)."
                             )
                         st.rerun()
-                    except (DeepSeekError, ValueError) as exc:
+                    except (AIProviderError, ValueError) as exc:
                         st.error(str(exc))
 
             with review_tab:
@@ -4277,10 +4432,11 @@ def render_sayings(
                         for item in candidates
                         if item["id"] == selected_id
                     )
-                    if st.button("Ask DeepSeek to review this candidate"):
+                    if st.button(f"Ask {provider_name} to review this candidate"):
                         try:
-                            with st.spinner("DeepSeek is reviewing..."):
-                                review_result = review_with_deepseek(
+                            with st.spinner(f"{provider_name} is reviewing..."):
+                                review_result = review_with_ai(
+                                    provider_name,
                                     api_key,
                                     model,
                                     selected,
@@ -4297,7 +4453,9 @@ def render_sayings(
                                 candidate["reviewed_at"] = datetime.now(
                                     timezone.utc
                                 ).isoformat()
-                                candidate["review_model"] = model
+                                candidate["review_model"] = (
+                                    f"{provider_name}: {model}"
+                                )
                                 effective_status = review_result["overall"]
                                 if (
                                     candidate.get("duplicate_warning")
@@ -4308,15 +4466,16 @@ def render_sayings(
                                 append_event(
                                     current,
                                     "info",
-                                    "DeepSeek candidate review saved.",
+                                    "AI candidate review saved.",
                                     candidate_id=selected_id,
                                     status=effective_status,
                                     model=model,
+                                    provider=provider_name,
                                 )
 
                             store.update(persist_review)
                             st.rerun()
-                        except DeepSeekError as exc:
+                        except AIProviderError as exc:
                             st.error(str(exc))
                     review = selected.get("ai_review") or {}
                     if review:
@@ -4385,7 +4544,7 @@ def render_sayings(
                                         "source_confidence", "unverified"
                                     ),
                                     "origin": (
-                                        f"DeepSeek reviewed correction ({model})"
+                                        f"{provider_name} reviewed correction ({model})"
                                     ),
                                     "verification_status": (
                                         "AI-corrected candidate; human "
@@ -4533,7 +4692,7 @@ def render_sayings(
                         "Wording and attribution are not changed."
                     )
                     confirm_backfill = st.checkbox(
-                        "I understand this uses my DeepSeek API account.",
+                        f"I understand this uses my {provider_name} API account.",
                         key="confirm_metadata_backfill",
                     )
                     if st.button(
@@ -4542,10 +4701,11 @@ def render_sayings(
                     ):
                         try:
                             with st.spinner(
-                                "DeepSeek is preparing metadata..."
+                                f"{provider_name} is preparing metadata..."
                             ):
                                 updates, metadata_warnings = (
-                                    backfill_candidate_metadata_with_deepseek(
+                                    backfill_candidate_metadata_with_ai(
+                                        provider_name,
                                         api_key,
                                         model,
                                         candidates,
@@ -4601,6 +4761,7 @@ def render_sayings(
                                     "Legacy AI candidate metadata backfilled.",
                                     updated=updated,
                                     model=model,
+                                    provider=provider_name,
                                 )
                                 return updated
 
@@ -4615,7 +4776,7 @@ def render_sayings(
                                     + "\n- ".join(metadata_warnings)
                                 )
                             st.rerun()
-                        except DeepSeekError as exc:
+                        except AIProviderError as exc:
                             st.error(str(exc))
             left, right = st.columns(2)
             allow_caution = left.checkbox(
@@ -5185,15 +5346,15 @@ def render_linkedin_setup(
             "setting": "Encryption key",
             "ready": "yes" if config["FERNET_KEY"] else "no",
         },
-        {
-            "setting": "DeepSeek AI (optional)",
-            "ready": (
-                f"yes — {config.get('DEEPSEEK_MODEL', DEFAULT_DEEPSEEK_MODEL)}"
-                if config.get("DEEPSEEK_API_KEY")
-                else "not configured"
-            ),
-        },
     ]
+    for provider_name, provider in AI_PROVIDERS.items():
+        api_key, model = ai_provider_credentials(config, provider_name)
+        checks.append(
+            {
+                "setting": f"{provider_name} AI (optional)",
+                "ready": f"yes — {model}" if api_key else "not configured",
+            }
+        )
     st.dataframe(pd.DataFrame(checks), hide_index=True, use_container_width=True)
     st.caption("LinkedIn redirect URI")
     st.code(config["LINKEDIN_REDIRECT_URI"])
