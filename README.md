@@ -11,14 +11,14 @@ treating AI generation as source verification.
 [![Python 3.12](https://img.shields.io/badge/python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Streamlit](https://img.shields.io/badge/built%20with-Streamlit-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
 [![LinkedIn API](https://img.shields.io/badge/publishing-LinkedIn%20API-0A66C2?logo=linkedin&logoColor=white)](https://learn.microsoft.com/linkedin/)
-[![DeepSeek optional](https://img.shields.io/badge/AI-DeepSeek%20optional-5B5BD6)](https://api-docs.deepseek.com/)
+[![Multi-provider AI](https://img.shields.io/badge/AI-multi--provider%20optional-5B5BD6)](#multi-provider-ai-and-source-verification)
 [![Status](https://img.shields.io/badge/status-active%20development-orange)](#known-limitations)
 [![GitHub issues](https://img.shields.io/github/issues/peristron/LI_poster)](https://github.com/peristron/LI_poster/issues)
 [![GitHub pull requests](https://img.shields.io/github/issues-pr/peristron/LI_poster)](https://github.com/peristron/LI_poster/pulls)
 
 [Overview](#overview) · [Capabilities](#capabilities) ·
 [Deployment](#deployment-and-integration) · [Using the app](#recommended-workflow) ·
-[AI safeguards](#deepseek-ai-and-source-verification) ·
+[AI safeguards](#multi-provider-ai-and-source-verification) ·
 [Troubleshooting](#troubleshooting)
 
 </div>
@@ -29,7 +29,7 @@ treating AI generation as source verification.
 
 `li_poster` is a self-contained Streamlit application that prepares, reviews,
 schedules, and publishes short reviewed posts to a connected LinkedIn member
-profile. Version 2.1 provides three independently reviewable collections:
+profile. Version 2.2 provides three independently reviewable collections:
 Latin sayings, physics facts, and history facts. It also adds a consistent
 automation disclosure to every post and refreshes untouched starter material
 with less-familiar, source-led entries.
@@ -58,7 +58,7 @@ Source: checkable attribution
 (Automated post; reviewed before scheduling.)
 ```
 
-The application combines a curated library, optional DeepSeek editorial
+The application combines a curated library, optional multi-provider AI editorial
 assistance, human approval, randomized scheduling, LinkedIn OAuth 2.0, and
 GitHub-backed state. It is designed for cautious personal automation rather
 than unattended high-volume posting.
@@ -99,7 +99,7 @@ It is especially useful when you want to:
 | Area | Current capability | Important boundary |
 |---|---|---|
 | Content library | Review, edit, approve, import, and export three content collections | Only approved entries can be scheduled |
-| DeepSeek workshop | Generate collection-specific candidates, translate Latin, and review candidates | AI output is never automatically approved or published |
+| AI workshop | Generate collection-specific candidates, translate Latin, and review candidates with Mistral, Z.AI, Cohere, or DeepSeek | AI output is never automatically approved or published |
 | Source-language controls | Prefer, balance, or require a source language | The label is model-produced until independently verified |
 | Content-suitability policy | Screens publishable fields for explicitly religious or theological language | The filter supports  neutral output but cannot replace editorial judgment |
 | Scheduling | Randomizes eligible weekdays and times, enabled collections, and weighted content mix | Timing is approximate on Streamlit Community Cloud |
@@ -122,7 +122,7 @@ Internal review metadata is not included in the LinkedIn post.
 ### Bundled starter material
 
 Bundled records are starting points for review, not pre-approved publishing
-inventory. Version 2.1 favors less-familiar material over commonplace trivia:
+inventory. Version 2.2 favors less-familiar material over commonplace trivia:
 
 | Collection | Editorial direction | Review expectation |
 |---|---|---|
@@ -138,7 +138,7 @@ plausible institutional citation with completed verification.
 ```mermaid
 flowchart TD
     A["Administrator in Streamlit"] --> B["Content library"]
-    A --> C["Optional DeepSeek workshop"]
+    A --> C["Optional AI workshop"]
     C --> D["Staged, unapproved candidates"]
     D --> B
     B --> E["Human-approved content"]
@@ -188,14 +188,14 @@ The deployed Streamlit process starts a background worker. Approximately every
 
 | Item | Current value |
 |---|---|
-| Application version | 2.1.0 |
+| Application version | 2.2.0 |
 | Main application file | `streamlit_app.py` |
 | Supported Python version | Python 3.12 |
 | Streamlit URL used during setup | `https://liposter.streamlit.app/` |
 | Runtime-state branch | `runtime-state` |
 | Runtime-state file | `runtime/state.json` |
 | LinkedIn authorization scopes | `openid profile w_member_social` |
-| Default DeepSeek model | `deepseek-v4-flash` |
+| Default AI provider | Mistral (`mistral-small-latest`) |
 | Background worker interval | Approximately 45 seconds while awake |
 | Default timezone | `America/Toronto` |
 | Recommended initial mode | Automation paused and dry-run on |
@@ -212,11 +212,17 @@ LI_poster/
 └── streamlit_app.py   # Complete monolithic Streamlit application
 ```
 
-## Upgrading to 2.1
+## Upgrading to 2.2
 
-No new Python package, Streamlit secret, LinkedIn product, OAuth scope, redirect
-URI, or GitHub branch is required. Replace `streamlit_app.py` and keep the
-existing `requirements.txt` and Streamlit Secrets.
+No new Python package, required Streamlit secret, LinkedIn product, OAuth scope,
+redirect URI, or GitHub branch is required. Replace `streamlit_app.py` and keep
+the existing `requirements.txt` and Streamlit Secrets.
+
+Version 2.2 adds Mistral, Z.AI, and Cohere alongside DeepSeek, with Mistral as
+the default when its key is configured. Existing DeepSeek-only settings still
+work. Eight additional Latin starter sayings are merged as unapproved records;
+existing approved, edited, queued, posted, and user-created records are not
+overwritten.
 
 On first load, schema version 7:
 
@@ -308,7 +314,7 @@ Before deployment, prepare:
 - a fine-grained GitHub personal access token;
 - an application administrator password;
 - a Fernet encryption key; and
-- optionally, a DeepSeek API key.
+- optionally, at least one supported AI provider API key.
 
 ## 1. Create the GitHub repository
 
@@ -535,6 +541,17 @@ LINKEDIN_REDIRECT_URI = "https://liposter.streamlit.app/"
 FERNET_KEY = "PASTE_URL_SAFE_FERNET_KEY"
 TIMEZONE = "America/Toronto"
 
+# Mistral is the default when configured.
+MISTRAL_API_KEY = "PASTE_MISTRAL_API_KEY"
+MISTRAL_MODEL = "mistral-small-latest"
+
+# Optional alternatives. Add only the providers you use.
+GLM_API_KEY = "PASTE_ZAI_API_KEY"
+GLM_MODEL = "glm-4.7-flash"
+
+COHERE_API_KEY = "PASTE_COHERE_API_KEY"
+COHERE_MODEL = "command-a-plus-05-2026"
+
 DEEPSEEK_API_KEY = "PASTE_DEEPSEEK_API_KEY"
 DEEPSEEK_MODEL = "deepseek-v4-flash"
 ```
@@ -555,11 +572,18 @@ Recommended:
 
 Optional:
 
+- `MISTRAL_API_KEY`
+- `MISTRAL_MODEL`
+- `GLM_API_KEY`
+- `GLM_MODEL`
+- `COHERE_API_KEY`
+- `COHERE_MODEL`
 - `DEEPSEEK_API_KEY`
 - `DEEPSEEK_MODEL`
 
-Without the DeepSeek key, LinkedIn, scheduling, CSV, and manual content features
-continue to work. Only the AI workshop is disabled.
+At least one supported API key is required to enable the AI workshop. Without
+an AI key, LinkedIn, scheduling, CSV, and manual content features continue to
+work. Only the AI workshop is disabled.
 
 ## 10. Connect the LinkedIn member account
 
@@ -687,11 +711,21 @@ attribution
 Imported entries are always unapproved. Exact and near duplicates are skipped.
 Content conflicting with the content-suitability wording policy is blocked.
 
-## DeepSeek AI and source verification
+## Multi-provider AI and source verification
 
-### Using the DeepSeek AI workshop
+### Using the AI workshop
 
-DeepSeek is editorial assistance, not independent source verification.
+AI output is editorial assistance, not independent source verification.
+
+Only providers with a configured API key appear in the selector. Mistral is
+selected by default when it is configured.
+
+| Provider | Secret names | Default model |
+|---|---|---|
+| Mistral | `MISTRAL_API_KEY`, `MISTRAL_MODEL` | `mistral-small-latest` |
+| Z.AI (GLM) | `GLM_API_KEY`, `GLM_MODEL` | `glm-4.7-flash` |
+| Cohere | `COHERE_API_KEY`, `COHERE_MODEL` | `command-a-plus-05-2026` |
+| DeepSeek | `DEEPSEEK_API_KEY`, `DEEPSEEK_MODEL` | `deepseek-v4-flash` |
 
 Generated or translated content:
 
@@ -701,8 +735,8 @@ Generated or translated content:
 - is never automatically published; and
 - requires human review before entering the library.
 
-Each DeepSeek request uses the configured API account and may incur usage
-charges.
+Each request uses the selected provider's configured API account and may incur
+usage charges.
 
 ### Generate content
 
@@ -747,7 +781,7 @@ Source-language mode: Balanced coverage across preferred languages
 
 **Preferred languages only**
 
-The listed languages guide DeepSeek but do not guarantee coverage.
+The listed languages guide the selected provider but do not guarantee coverage.
 
 ### Classical Arabic sources
 
@@ -802,12 +836,13 @@ Generation uses up to three rounds:
 4. stage a valid partial result with a warning if the requested total still
    cannot be reached.
 
-A DeepSeek response that is truncated, empty, or malformed is retried once with
-a larger output allowance. Model thinking is disabled for structured JSON
-requests to preserve the completion allowance.
+An AI response that is truncated, empty, or malformed is retried once with a
+larger output allowance. Providers with documented JSON mode use it for
+structured requests; DeepSeek thinking is disabled to preserve the completion
+allowance.
 
 Because each generation round can itself require one API retry, a difficult
-request may use more than one DeepSeek API call.
+request may use more than one AI API call.
 
 ### Translate text
 
@@ -819,14 +854,14 @@ request may use more than one DeepSeek API call.
 5. Request the translation.
 6. Review the staged Latin and back-translation.
 
-The application does not allow DeepSeek to invent an ancient attribution for
-user-supplied text.
+The application instructs the selected provider not to invent an ancient
+attribution for user-supplied text.
 
 ### Review candidate
 
 1. Open **Review candidate**.
 2. Select a staged candidate.
-3. Ask DeepSeek to review it.
+3. Ask the selected provider to review it.
 4. Examine:
 
    - Latin assessment;
@@ -860,7 +895,7 @@ Older staged candidates may show:
 
 Expand **Legacy candidate metadata maintenance**:
 
-1. confirm that the operation uses the DeepSeek API;
+1. confirm that the operation uses the selected provider's API;
 2. select **Backfill missing metadata**;
 3. review the returned metadata; and
 4. repeat if more than ten candidates require updates.
@@ -1091,10 +1126,11 @@ To rotate:
 4. Reconnect LinkedIn.
 5. Confirm the new token can be used.
 
-### DeepSeek key
+### AI provider keys
 
-Replace `DEEPSEEK_API_KEY` and restart. Existing content, candidates, and
-LinkedIn functionality remain available.
+Replace the affected provider key and restart. Existing content, candidates,
+and LinkedIn functionality remain available. A provider disappears from the
+selector when its API key is removed.
 
 ## Troubleshooting
 
@@ -1161,19 +1197,19 @@ only after confirming whether the post exists.
 Restore the original `FERNET_KEY`. If the key was intentionally replaced,
 reconnect LinkedIn.
 
-### DeepSeek 401
+### AI provider 401
 
 Replace the API key.
 
-### DeepSeek 402
+### AI provider 402
 
-Check the DeepSeek account balance.
+Check the selected provider account balance.
 
-### DeepSeek 429
+### AI provider 429
 
 Wait and retry later.
 
-### DeepSeek truncation or malformed JSON
+### AI provider truncation or malformed JSON
 
 The app automatically retries once with a larger generated-output allowance.
 If the retry fails:
@@ -1282,9 +1318,9 @@ always-on scheduler or hosting service.
 - Scope the GitHub token to one repository.
 - Use a private repository when practical.
 - Treat the runtime-state branch as operational data.
-- DeepSeek receives the candidate-generation prompts and a compact list of
+- The selected AI provider receives candidate-generation prompts and a compact list of
   existing Latin and attributions for duplicate avoidance.
-- DeepSeek does not receive the LinkedIn token, GitHub token, administrator
+- The selected AI provider does not receive the LinkedIn token, GitHub token, administrator
   password, or Fernet key.
 - LinkedIn receives only OAuth requests and the post payloads submitted through
   its API.
@@ -1299,7 +1335,7 @@ always-on scheduler or hosting service.
 - The in-process worker has no guaranteed service-level agreement.
 - Scheduled times are approximate.
 - LinkedIn API access, products, scopes, and token policies can change.
-- DeepSeek output can be incorrect or incomplete.
+- AI output can be incorrect or incomplete.
 - AI source citations require independent verification.
 - A language model cannot guarantee classical-text accuracy.
 - The local content-suitability filter is conservative, supports  
@@ -1342,8 +1378,9 @@ content in an Issue or Pull Request.
 ## Project status and affiliation
 
 This is an independent personal project. It is not affiliated with, endorsed
-by, sponsored by, or developed on behalf of LinkedIn, Microsoft, DeepSeek,
-GitHub, Streamlit, the maintainer's employer, or any other organization.
+by, sponsored by, or developed on behalf of LinkedIn, Microsoft, Mistral AI,
+Z.AI, Cohere, DeepSeek, GitHub, Streamlit, the maintainer's employer, or any
+other organization.
 
 References to third-party products and services are descriptive and do not
 imply endorsement or affiliation.
