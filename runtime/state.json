@@ -1,6 +1,6 @@
 {
   "schema_version": 7,
-  "revision": 76,
+  "revision": 77,
   "settings": {
     "automation_enabled": true,
     "dry_run": false,
@@ -702,7 +702,7 @@
     },
     {
       "id": "horace-ars-25",
-      "approved": false,
+      "approved": true,
       "collection": "latin_sayings",
       "lead": "",
       "body": "",
@@ -4334,6 +4334,14 @@
     },
     {
       "at": "2026-08-23T04:01:43.665539+00:00",
+      "level": "info",
+      "message": "Content library updated.",
+      "details": {
+        "count": 77
+      }
+    },
+    {
+      "at": "2026-08-23T04:02:49.047833+00:00",
       "level": "info",
       "message": "Content library updated.",
       "details": {
