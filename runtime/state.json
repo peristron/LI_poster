@@ -1,6 +1,6 @@
 {
   "schema_version": 7,
-  "revision": 78,
+  "revision": 79,
   "settings": {
     "automation_enabled": false,
     "dry_run": false,
@@ -4352,6 +4352,11 @@
       "at": "2026-08-23T04:03:25.026831+00:00",
       "level": "warning",
       "message": "Automation paused."
+    },
+    {
+      "at": "2026-08-23T04:03:27.355342+00:00",
+      "level": "info",
+      "message": "Schedule settings updated."
     }
   ],
   "ai_candidates": [
