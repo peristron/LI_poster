@@ -1,8 +1,8 @@
 {
   "schema_version": 7,
-  "revision": 77,
+  "revision": 78,
   "settings": {
-    "automation_enabled": true,
+    "automation_enabled": false,
     "dry_run": false,
     "posts_per_week_min": 2,
     "posts_per_week_max": 3,
@@ -4347,6 +4347,11 @@
       "details": {
         "count": 77
       }
+    },
+    {
+      "at": "2026-08-23T04:03:25.026831+00:00",
+      "level": "warning",
+      "message": "Automation paused."
     }
   ],
   "ai_candidates": [
