@@ -1,6 +1,6 @@
 {
   "schema_version": 7,
-  "revision": 74,
+  "revision": 75,
   "settings": {
     "automation_enabled": true,
     "dry_run": false,
@@ -4321,6 +4321,16 @@
       "details": {
         "queue_id": "e40893fc-7650-45dc-a957-3f45d85f19e0"
       }
+    },
+    {
+      "at": "2026-08-23T01:38:16.691606+00:00",
+      "level": "info",
+      "message": "AI candidates staged for human review.",
+      "details": {
+        "added": 1,
+        "duplicates_skipped": 0,
+        "near_duplicate_warnings": 0
+      }
     }
   ],
   "ai_candidates": [
@@ -5069,6 +5079,36 @@
       "note": "Exact source uncertain; often quoted as a proverb. Low source confidence; verify before use.",
       "ai_review": {},
       "review_status": "caution",
+      "reviewed_at": "",
+      "review_model": "",
+      "duplicate_warning": "",
+      "policy_warning": ""
+    },
+    {
+      "id": "ai-6f73ab54889580df",
+      "approved": false,
+      "collection": "latin_sayings",
+      "lead": "",
+      "body": "",
+      "latin": "行有不得，反求諸己。",
+      "translation": "If an action fails, reflect on yourself.",
+      "attribution": "Mencius, Mencius 4B:2 (4th century BCE)",
+      "source_title": "Mencius, Mencius 4B:2 (4th century BCE)",
+      "source_url": "",
+      "source_type": "primary text",
+      "tags": "self-reflection and responsibility",
+      "verified_at": "",
+      "latin_kind": "modern Latin rendering from Classical Chinese",
+      "primary_theme": "self-reflection and responsibility",
+      "source_language": "Classical Chinese",
+      "source_period": "4th century BCE",
+      "source_confidence": "high",
+      "source_text": "行有不得，反求諸己",
+      "origin": "Mistral suggestion (mistral-small-latest)",
+      "verification_status": "AI candidate; human verification required",
+      "note": "A core tenet of Confucian ethics on personal accountability.",
+      "ai_review": {},
+      "review_status": "unreviewed",
       "reviewed_at": "",
       "review_model": "",
       "duplicate_warning": "",
