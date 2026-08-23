@@ -1,6 +1,6 @@
 {
   "schema_version": 7,
-  "revision": 75,
+  "revision": 76,
   "settings": {
     "automation_enabled": true,
     "dry_run": false,
@@ -4330,6 +4330,14 @@
         "added": 1,
         "duplicates_skipped": 0,
         "near_duplicate_warnings": 0
+      }
+    },
+    {
+      "at": "2026-08-23T04:01:43.665539+00:00",
+      "level": "info",
+      "message": "Content library updated.",
+      "details": {
+        "count": 77
       }
     }
   ],
