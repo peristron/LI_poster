@@ -1,6 +1,6 @@
 {
   "schema_version": 7,
-  "revision": 81,
+  "revision": 82,
   "settings": {
     "automation_enabled": true,
     "dry_run": false,
@@ -3040,10 +3040,12 @@
       "collection": "latin_sayings",
       "post_text": "Est modus in rebus.\n\nThere is a proper measure in things.\n\n— Horace, Satires 1.1.106\n\n(Automated post; reviewed before scheduling.)",
       "scheduled_for": "2026-08-24T19:49:00+00:00",
-      "status": "publishing",
+      "status": "posted",
       "created_at": "2026-08-10T20:01:29.709212+00:00",
       "attempts": 1,
-      "claimed_at": "2026-08-24T19:49:42.642636+00:00"
+      "claimed_at": "2026-08-24T19:49:42.642636+00:00",
+      "posted_at": "2026-08-24T19:49:45.136772+00:00",
+      "linkedin_post_id": "urn:li:share:7497741959785242625"
     },
     {
       "id": "f07e2b3b-e1f7-4b38-a57c-08f9e472fbd2",
@@ -3243,6 +3245,46 @@
       "scheduled_for": "2026-09-02T23:53:00+00:00",
       "status": "queued",
       "created_at": "2026-08-19T20:14:40.250280+00:00",
+      "attempts": 0
+    },
+    {
+      "id": "4d978caf-06a8-4185-99da-5c2b8544bc6f",
+      "saying_id": "horace-ars-25",
+      "saying_snapshot": {
+        "id": "horace-ars-25",
+        "approved": true,
+        "collection": "latin_sayings",
+        "lead": "",
+        "body": "",
+        "latin": "Brevis esse laboro, obscurus fio.",
+        "translation": "When I strive to be brief, I become obscure.",
+        "attribution": "Horace, Ars Poetica 25",
+        "source_title": "Horace, Ars Poetica 25",
+        "source_url": "",
+        "source_type": "primary text",
+        "tags": "",
+        "verified_at": "",
+        "latin_kind": "original Latin",
+        "primary_theme": "",
+        "source_language": "Latin",
+        "source_period": "antiquity",
+        "source_confidence": "curated; verify edition",
+        "source_text": "",
+        "origin": "bundled curated library",
+        "verification_status": "review source before approval",
+        "note": "",
+        "ai_review": {},
+        "review_status": "unreviewed",
+        "reviewed_at": "",
+        "review_model": "",
+        "duplicate_warning": "",
+        "policy_warning": ""
+      },
+      "collection": "latin_sayings",
+      "post_text": "Brevis esse laboro, obscurus fio.\n\nWhen I strive to be brief, I become obscure.\n\n— Horace, Ars Poetica 25\n\n(Automated post; reviewed before scheduling.)",
+      "scheduled_for": "2026-09-07T23:59:00+00:00",
+      "status": "queued",
+      "created_at": "2026-08-24T19:49:45.136848+00:00",
       "attempts": 0
     }
   ],
@@ -3838,6 +3880,49 @@
       "claimed_at": "2026-08-21T21:19:21.260722+00:00",
       "posted_at": "2026-08-21T21:19:23.827386+00:00",
       "linkedin_post_id": "urn:li:share:7496677356405858304"
+    },
+    {
+      "id": "650968fd-c562-442a-93a9-00323943c92c",
+      "saying_id": "horace-satires-1-1-106",
+      "saying_snapshot": {
+        "id": "horace-satires-1-1-106",
+        "approved": true,
+        "collection": "latin_sayings",
+        "lead": "",
+        "body": "",
+        "latin": "Est modus in rebus.",
+        "translation": "There is a proper measure in things.",
+        "attribution": "Horace, Satires 1.1.106",
+        "source_title": "Horace, Satires 1.1.106",
+        "source_url": "",
+        "source_type": "primary text",
+        "tags": "",
+        "verified_at": "",
+        "latin_kind": "original Latin",
+        "primary_theme": "",
+        "source_language": "Latin",
+        "source_period": "antiquity",
+        "source_confidence": "curated; verify edition",
+        "source_text": "",
+        "origin": "bundled curated library",
+        "verification_status": "review source before approval",
+        "note": "",
+        "ai_review": {},
+        "review_status": "unreviewed",
+        "reviewed_at": "",
+        "review_model": "",
+        "duplicate_warning": "",
+        "policy_warning": ""
+      },
+      "collection": "latin_sayings",
+      "post_text": "Est modus in rebus.\n\nThere is a proper measure in things.\n\n— Horace, Satires 1.1.106\n\n(Automated post; reviewed before scheduling.)",
+      "scheduled_for": "2026-08-24T19:49:00+00:00",
+      "status": "posted",
+      "created_at": "2026-08-10T20:01:29.709212+00:00",
+      "attempts": 1,
+      "claimed_at": "2026-08-24T19:49:42.642636+00:00",
+      "posted_at": "2026-08-24T19:49:45.136772+00:00",
+      "linkedin_post_id": "urn:li:share:7497741959785242625"
     }
   ],
   "events": [
@@ -4368,6 +4453,14 @@
       "at": "2026-08-24T19:49:42.642688+00:00",
       "level": "info",
       "message": "Claimed a scheduled post.",
+      "details": {
+        "queue_id": "650968fd-c562-442a-93a9-00323943c92c"
+      }
+    },
+    {
+      "at": "2026-08-24T19:49:45.136839+00:00",
+      "level": "info",
+      "message": "Post published.",
       "details": {
         "queue_id": "650968fd-c562-442a-93a9-00323943c92c"
       }
