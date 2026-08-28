@@ -1,6 +1,6 @@
 {
   "schema_version": 7,
-  "revision": 87,
+  "revision": 88,
   "settings": {
     "automation_enabled": true,
     "dry_run": false,
@@ -2372,7 +2372,13 @@
       "source_text": "",
       "origin": "bundled curated library",
       "verification_status": "review source before approval",
-      "note": ""
+      "note": "",
+      "ai_review": {},
+      "review_status": "unreviewed",
+      "reviewed_at": "",
+      "review_model": "",
+      "duplicate_warning": "",
+      "policy_warning": ""
     },
     {
       "id": "seneca-ep-3-2",
@@ -2396,7 +2402,13 @@
       "source_text": "",
       "origin": "bundled curated library",
       "verification_status": "review source before approval",
-      "note": ""
+      "note": "",
+      "ai_review": {},
+      "review_status": "unreviewed",
+      "reviewed_at": "",
+      "review_model": "",
+      "duplicate_warning": "",
+      "policy_warning": ""
     },
     {
       "id": "seneca-ep-28-1",
@@ -2420,7 +2432,13 @@
       "source_text": "",
       "origin": "bundled curated library",
       "verification_status": "review source before approval",
-      "note": ""
+      "note": "",
+      "ai_review": {},
+      "review_status": "unreviewed",
+      "reviewed_at": "",
+      "review_model": "",
+      "duplicate_warning": "",
+      "policy_warning": ""
     },
     {
       "id": "horace-ep-1-18-71",
@@ -2444,7 +2462,13 @@
       "source_text": "",
       "origin": "bundled curated library",
       "verification_status": "review source before approval",
-      "note": ""
+      "note": "",
+      "ai_review": {},
+      "review_status": "unreviewed",
+      "reviewed_at": "",
+      "review_model": "",
+      "duplicate_warning": "",
+      "policy_warning": ""
     },
     {
       "id": "virgil-georgics-2-490",
@@ -2468,7 +2492,13 @@
       "source_text": "",
       "origin": "bundled curated library",
       "verification_status": "review source before approval",
-      "note": ""
+      "note": "",
+      "ai_review": {},
+      "review_status": "unreviewed",
+      "reviewed_at": "",
+      "review_model": "",
+      "duplicate_warning": "",
+      "policy_warning": ""
     },
     {
       "id": "sallust-catilina-1-2",
@@ -2492,7 +2522,13 @@
       "source_text": "",
       "origin": "bundled curated library",
       "verification_status": "review source before approval",
-      "note": ""
+      "note": "",
+      "ai_review": {},
+      "review_status": "unreviewed",
+      "reviewed_at": "",
+      "review_model": "",
+      "duplicate_warning": "",
+      "policy_warning": ""
     },
     {
       "id": "pliny-ep-3-5-10",
@@ -2516,7 +2552,13 @@
       "source_text": "",
       "origin": "bundled curated library",
       "verification_status": "review source before approval",
-      "note": "Pliny reports this as his uncle's view in indirect speech."
+      "note": "Pliny reports this as his uncle's view in indirect speech.",
+      "ai_review": {},
+      "review_status": "unreviewed",
+      "reviewed_at": "",
+      "review_model": "",
+      "duplicate_warning": "",
+      "policy_warning": ""
     },
     {
       "id": "quintilian-inst-10-7-15",
@@ -2540,7 +2582,13 @@
       "source_text": "",
       "origin": "bundled curated library",
       "verification_status": "review source before approval",
-      "note": ""
+      "note": "",
+      "ai_review": {},
+      "review_status": "unreviewed",
+      "reviewed_at": "",
+      "review_model": "",
+      "duplicate_warning": "",
+      "policy_warning": ""
     }
   ],
   "queue": [
@@ -3361,10 +3409,12 @@
       "collection": "latin_sayings",
       "post_text": "Summum ius summa iniuria.\n\nThe strictest law can become the greatest injustice.\n\n— Cicero, De Officiis 1.33\n\n(Automated post; reviewed before scheduling.)",
       "scheduled_for": "2026-08-28T19:50:00+00:00",
-      "status": "publishing",
+      "status": "posted",
       "created_at": "2026-08-25T21:45:25.915677+00:00",
       "attempts": 1,
-      "claimed_at": "2026-08-28T20:11:18.692661+00:00"
+      "claimed_at": "2026-08-28T20:11:18.692661+00:00",
+      "posted_at": "2026-08-28T20:11:21.051803+00:00",
+      "linkedin_post_id": "urn:li:share:7499196947375853568"
     },
     {
       "id": "90836609-b1ce-4da1-9853-34fcab79a762",
@@ -4328,6 +4378,49 @@
       "claimed_at": "2026-08-26T21:03:40.029313+00:00",
       "posted_at": "2026-08-26T21:03:42.407496+00:00",
       "linkedin_post_id": "urn:li:share:7498485347228643328"
+    },
+    {
+      "id": "62305f5a-7eb8-44ef-92de-ae3dbd6ffd63",
+      "saying_id": "cicero-officiis-1-33",
+      "saying_snapshot": {
+        "id": "cicero-officiis-1-33",
+        "approved": true,
+        "collection": "latin_sayings",
+        "lead": "",
+        "body": "",
+        "latin": "Summum ius summa iniuria.",
+        "translation": "The strictest law can become the greatest injustice.",
+        "attribution": "Cicero, De Officiis 1.33",
+        "source_title": "Cicero, De Officiis 1.33",
+        "source_url": "",
+        "source_type": "primary text",
+        "tags": "",
+        "verified_at": "",
+        "latin_kind": "original Latin",
+        "primary_theme": "",
+        "source_language": "Latin",
+        "source_period": "antiquity",
+        "source_confidence": "curated; verify edition",
+        "source_text": "",
+        "origin": "bundled curated library",
+        "verification_status": "review source before approval",
+        "note": "",
+        "ai_review": {},
+        "review_status": "unreviewed",
+        "reviewed_at": "",
+        "review_model": "",
+        "duplicate_warning": "",
+        "policy_warning": ""
+      },
+      "collection": "latin_sayings",
+      "post_text": "Summum ius summa iniuria.\n\nThe strictest law can become the greatest injustice.\n\n— Cicero, De Officiis 1.33\n\n(Automated post; reviewed before scheduling.)",
+      "scheduled_for": "2026-08-28T19:50:00+00:00",
+      "status": "posted",
+      "created_at": "2026-08-25T21:45:25.915677+00:00",
+      "attempts": 1,
+      "claimed_at": "2026-08-28T20:11:18.692661+00:00",
+      "posted_at": "2026-08-28T20:11:21.051803+00:00",
+      "linkedin_post_id": "urn:li:share:7499196947375853568"
     }
   ],
   "events": [
@@ -4906,6 +4999,14 @@
       "at": "2026-08-28T20:11:18.692737+00:00",
       "level": "info",
       "message": "Claimed a scheduled post.",
+      "details": {
+        "queue_id": "62305f5a-7eb8-44ef-92de-ae3dbd6ffd63"
+      }
+    },
+    {
+      "at": "2026-08-28T20:11:21.051906+00:00",
+      "level": "info",
+      "message": "Post published.",
       "details": {
         "queue_id": "62305f5a-7eb8-44ef-92de-ae3dbd6ffd63"
       }
