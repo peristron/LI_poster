@@ -1,6 +1,6 @@
 {
   "schema_version": 7,
-  "revision": 106,
+  "revision": 107,
   "settings": {
     "automation_enabled": true,
     "dry_run": false,
@@ -3839,9 +3839,10 @@
       "collection": "physics_facts",
       "post_text": "Physics note: Radio waves, visible light, and X-rays are all electromagnetic radiation.\n\nThey differ in wavelength, frequency, and energy, but all belong to the same spectrum.\n\nSource: NASA Science, Electromagnetic Spectrum\n\n(Automated post; reviewed before scheduling.)",
       "scheduled_for": "2026-09-14T23:38:00+00:00",
-      "status": "queued",
+      "status": "publishing",
       "created_at": "2026-08-31T20:03:11.677969+00:00",
-      "attempts": 0
+      "attempts": 1,
+      "claimed_at": "2026-09-14T23:38:20.080111+00:00"
     },
     {
       "id": "b135cee0-021b-4e73-a18f-cc65f543db47",
@@ -5927,6 +5928,14 @@
       "message": "Post published.",
       "details": {
         "queue_id": "6697d570-fbe7-43fd-b0f8-691643eb73a1"
+      }
+    },
+    {
+      "at": "2026-09-14T23:38:20.080183+00:00",
+      "level": "info",
+      "message": "Claimed a scheduled post.",
+      "details": {
+        "queue_id": "aaa9f72c-4b9b-4d6e-9453-d586dc5ddad6"
       }
     }
   ],
