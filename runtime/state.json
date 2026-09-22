@@ -1,6 +1,6 @@
 {
   "schema_version": 7,
-  "revision": 117,
+  "revision": 118,
   "settings": {
     "automation_enabled": true,
     "dry_run": false,
@@ -4054,10 +4054,12 @@
       "collection": "latin_sayings",
       "post_text": "Amicus certus in re incerta cernitur.\n\nA sure friend is recognized in uncertain circumstances.\n\n— Ennius, fragment quoted by Cicero, De Amicitia 64\n\n(Automated post; reviewed before scheduling.)",
       "scheduled_for": "2026-09-22T20:09:00+00:00",
-      "status": "publishing",
+      "status": "posted",
       "created_at": "2026-09-08T20:00:38.747337+00:00",
       "attempts": 1,
-      "claimed_at": "2026-09-22T20:09:39.846021+00:00"
+      "claimed_at": "2026-09-22T20:09:39.846021+00:00",
+      "posted_at": "2026-09-22T20:09:42.691426+00:00",
+      "linkedin_post_id": "urn:li:share:7508256230642024449"
     },
     {
       "id": "a3d07b43-850b-4057-ab5f-38ed1e3777ac",
@@ -4257,6 +4259,46 @@
       "scheduled_for": "2026-10-05T22:13:00+00:00",
       "status": "queued",
       "created_at": "2026-09-21T21:35:06.537797+00:00",
+      "attempts": 0
+    },
+    {
+      "id": "ae6841fb-df99-4919-bd49-b89be9658884",
+      "saying_id": "virgil-aeneid-5-231",
+      "saying_snapshot": {
+        "id": "virgil-aeneid-5-231",
+        "approved": true,
+        "collection": "latin_sayings",
+        "lead": "",
+        "body": "",
+        "latin": "Possunt, quia posse videntur.",
+        "translation": "They can because they believe they can.",
+        "attribution": "Virgil, Aeneid 5.231",
+        "source_title": "Virgil, Aeneid 5.231",
+        "source_url": "",
+        "source_type": "primary text",
+        "tags": "",
+        "verified_at": "",
+        "latin_kind": "original Latin",
+        "primary_theme": "",
+        "source_language": "Latin",
+        "source_period": "antiquity",
+        "source_confidence": "curated; verify edition",
+        "source_text": "",
+        "origin": "bundled curated library",
+        "verification_status": "review source before approval",
+        "note": "",
+        "ai_review": {},
+        "review_status": "unreviewed",
+        "reviewed_at": "",
+        "review_model": "",
+        "duplicate_warning": "",
+        "policy_warning": ""
+      },
+      "collection": "latin_sayings",
+      "post_text": "Possunt, quia posse videntur.\n\nThey can because they believe they can.\n\n— Virgil, Aeneid 5.231\n\n(Automated post; reviewed before scheduling.)",
+      "scheduled_for": "2026-10-06T22:57:00+00:00",
+      "status": "queued",
+      "created_at": "2026-09-22T20:09:42.691547+00:00",
       "attempts": 0
     }
   ],
@@ -5626,6 +5668,49 @@
       "claimed_at": "2026-09-21T21:35:03.912860+00:00",
       "posted_at": "2026-09-21T21:35:06.537667+00:00",
       "linkedin_post_id": "urn:li:share:7507915334146949120"
+    },
+    {
+      "id": "debbc188-b8b4-47fa-99ab-b0dd0c8bf011",
+      "saying_id": "ennius-amicus-certus",
+      "saying_snapshot": {
+        "id": "ennius-amicus-certus",
+        "approved": true,
+        "collection": "latin_sayings",
+        "lead": "",
+        "body": "",
+        "latin": "Amicus certus in re incerta cernitur.",
+        "translation": "A sure friend is recognized in uncertain circumstances.",
+        "attribution": "Ennius, fragment quoted by Cicero, De Amicitia 64",
+        "source_title": "Ennius, fragment quoted by Cicero, De Amicitia 64",
+        "source_url": "",
+        "source_type": "primary text",
+        "tags": "",
+        "verified_at": "",
+        "latin_kind": "original Latin",
+        "primary_theme": "",
+        "source_language": "Latin",
+        "source_period": "antiquity",
+        "source_confidence": "curated; verify edition",
+        "source_text": "",
+        "origin": "bundled curated library",
+        "verification_status": "review source before approval",
+        "note": "",
+        "ai_review": {},
+        "review_status": "unreviewed",
+        "reviewed_at": "",
+        "review_model": "",
+        "duplicate_warning": "",
+        "policy_warning": ""
+      },
+      "collection": "latin_sayings",
+      "post_text": "Amicus certus in re incerta cernitur.\n\nA sure friend is recognized in uncertain circumstances.\n\n— Ennius, fragment quoted by Cicero, De Amicitia 64\n\n(Automated post; reviewed before scheduling.)",
+      "scheduled_for": "2026-09-22T20:09:00+00:00",
+      "status": "posted",
+      "created_at": "2026-09-08T20:00:38.747337+00:00",
+      "attempts": 1,
+      "claimed_at": "2026-09-22T20:09:39.846021+00:00",
+      "posted_at": "2026-09-22T20:09:42.691426+00:00",
+      "linkedin_post_id": "urn:li:share:7508256230642024449"
     }
   ],
   "events": [
@@ -6444,6 +6529,14 @@
       "at": "2026-09-22T20:09:39.846076+00:00",
       "level": "info",
       "message": "Claimed a scheduled post.",
+      "details": {
+        "queue_id": "debbc188-b8b4-47fa-99ab-b0dd0c8bf011"
+      }
+    },
+    {
+      "at": "2026-09-22T20:09:42.691535+00:00",
+      "level": "info",
+      "message": "Post published.",
       "details": {
         "queue_id": "debbc188-b8b4-47fa-99ab-b0dd0c8bf011"
       }
