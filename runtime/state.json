@@ -1,6 +1,6 @@
 {
   "schema_version": 7,
-  "revision": 129,
+  "revision": 130,
   "settings": {
     "automation_enabled": true,
     "dry_run": false,
@@ -4226,9 +4226,10 @@
       "collection": "latin_sayings",
       "post_text": "Non nobis solum nati sumus.\n\nWe are not born for ourselves alone.\n\n— Cicero, De Officiis 1.22\n\n(Automated post; reviewed before scheduling.)",
       "scheduled_for": "2026-09-29T20:28:00+00:00",
-      "status": "queued",
+      "status": "publishing",
       "created_at": "2026-09-15T20:31:40.079068+00:00",
-      "attempts": 0
+      "attempts": 1,
+      "claimed_at": "2026-10-25T22:08:37.206052+00:00"
     },
     {
       "id": "0b85a961-d669-44f7-b806-0ee024077e82",
@@ -7020,6 +7021,14 @@
       "message": "Post published.",
       "details": {
         "queue_id": "122f7945-8b72-4f9e-a6b0-0ca29b55ab52"
+      }
+    },
+    {
+      "at": "2026-10-25T22:08:37.206132+00:00",
+      "level": "info",
+      "message": "Claimed a scheduled post.",
+      "details": {
+        "queue_id": "f06b6dd1-ad53-4dfe-a231-3233dcffefa7"
       }
     }
   ],
