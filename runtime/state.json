@@ -1,6 +1,6 @@
 {
   "schema_version": 7,
-  "revision": 127,
+  "revision": 128,
   "settings": {
     "automation_enabled": true,
     "dry_run": false,
@@ -4183,9 +4183,10 @@
       "collection": "latin_sayings",
       "post_text": "Mens agitat molem.\n\nMind moves matter.\n\n— Virgil, Aeneid 6.727\n\n(Automated post; reviewed before scheduling.)",
       "scheduled_for": "2026-09-29T00:00:00+00:00",
-      "status": "queued",
+      "status": "publishing",
       "created_at": "2026-09-14T23:38:22.308473+00:00",
-      "attempts": 0
+      "attempts": 1,
+      "claimed_at": "2026-10-25T22:07:46.595164+00:00"
     },
     {
       "id": "f06b6dd1-ad53-4dfe-a231-3233dcffefa7",
@@ -6958,6 +6959,14 @@
       "message": "Post published.",
       "details": {
         "queue_id": "ce1ab39e-80f9-43cd-8cd0-22022f20ab22"
+      }
+    },
+    {
+      "at": "2026-10-25T22:07:46.595237+00:00",
+      "level": "info",
+      "message": "Claimed a scheduled post.",
+      "details": {
+        "queue_id": "122f7945-8b72-4f9e-a6b0-0ca29b55ab52"
       }
     }
   ],
