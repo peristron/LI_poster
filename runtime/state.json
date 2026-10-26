@@ -1,6 +1,6 @@
 {
   "schema_version": 7,
-  "revision": 138,
+  "revision": 139,
   "settings": {
     "automation_enabled": true,
     "dry_run": false,
@@ -4398,10 +4398,12 @@
       "collection": "latin_sayings",
       "post_text": "Ira furor brevis est.\n\nAnger is a brief madness.\n\n— Horace, Epistles 1.2.62\n\n(Automated post; reviewed before scheduling.)",
       "scheduled_for": "2026-10-26T22:25:00+00:00",
-      "status": "publishing",
+      "status": "posted",
       "created_at": "2026-10-25T22:06:04.686836+00:00",
       "attempts": 1,
-      "claimed_at": "2026-10-26T22:25:21.576147+00:00"
+      "claimed_at": "2026-10-26T22:25:21.576147+00:00",
+      "posted_at": "2026-10-26T22:25:24.943480+00:00",
+      "linkedin_post_id": "urn:li:share:7520611568036921344"
     },
     {
       "id": "0009f6a3-4911-418e-bf50-31cdd0301f70",
@@ -4601,6 +4603,46 @@
       "scheduled_for": "2026-11-06T21:12:00+00:00",
       "status": "queued",
       "created_at": "2026-10-25T22:06:04.686836+00:00",
+      "attempts": 0
+    },
+    {
+      "id": "285833ca-4a75-45c6-8dee-1fd40d5de12b",
+      "saying_id": "seneca-ep-1",
+      "saying_snapshot": {
+        "id": "seneca-ep-1",
+        "approved": true,
+        "collection": "latin_sayings",
+        "lead": "",
+        "body": "",
+        "latin": "Dum differtur, vita transcurrit.",
+        "translation": "While it is postponed, life passes by.",
+        "attribution": "Seneca, Epistulae Morales 1.2",
+        "source_title": "Seneca, Epistulae Morales 1.2",
+        "source_url": "",
+        "source_type": "primary text",
+        "tags": "",
+        "verified_at": "",
+        "latin_kind": "original Latin",
+        "primary_theme": "",
+        "source_language": "Latin",
+        "source_period": "antiquity",
+        "source_confidence": "curated; verify edition",
+        "source_text": "",
+        "origin": "bundled curated library",
+        "verification_status": "review source before approval",
+        "note": "",
+        "ai_review": {},
+        "review_status": "unreviewed",
+        "reviewed_at": "",
+        "review_model": "",
+        "duplicate_warning": "",
+        "policy_warning": ""
+      },
+      "collection": "latin_sayings",
+      "post_text": "Dum differtur, vita transcurrit.\n\nWhile it is postponed, life passes by.\n\n— Seneca, Epistulae Morales 1.2\n\n(Automated post; reviewed before scheduling.)",
+      "scheduled_for": "2026-11-09T21:40:00+00:00",
+      "status": "queued",
+      "created_at": "2026-10-26T22:25:24.943589+00:00",
       "attempts": 0
     }
   ],
@@ -6314,6 +6356,49 @@
       "claimed_at": "2026-10-25T22:11:09.398173+00:00",
       "posted_at": "2026-10-25T22:11:12.295637+00:00",
       "linkedin_post_id": "urn:li:share:7520245604149514240"
+    },
+    {
+      "id": "4fc809d1-4a9a-4518-985b-c0ec22a96a6f",
+      "saying_id": "horace-ep-1-2-62",
+      "saying_snapshot": {
+        "id": "horace-ep-1-2-62",
+        "approved": true,
+        "collection": "latin_sayings",
+        "lead": "",
+        "body": "",
+        "latin": "Ira furor brevis est.",
+        "translation": "Anger is a brief madness.",
+        "attribution": "Horace, Epistles 1.2.62",
+        "source_title": "Horace, Epistles 1.2.62",
+        "source_url": "",
+        "source_type": "primary text",
+        "tags": "",
+        "verified_at": "",
+        "latin_kind": "original Latin",
+        "primary_theme": "",
+        "source_language": "Latin",
+        "source_period": "antiquity",
+        "source_confidence": "curated; verify edition",
+        "source_text": "",
+        "origin": "bundled curated library",
+        "verification_status": "review source before approval",
+        "note": "",
+        "ai_review": {},
+        "review_status": "unreviewed",
+        "reviewed_at": "",
+        "review_model": "",
+        "duplicate_warning": "",
+        "policy_warning": ""
+      },
+      "collection": "latin_sayings",
+      "post_text": "Ira furor brevis est.\n\nAnger is a brief madness.\n\n— Horace, Epistles 1.2.62\n\n(Automated post; reviewed before scheduling.)",
+      "scheduled_for": "2026-10-26T22:25:00+00:00",
+      "status": "posted",
+      "created_at": "2026-10-25T22:06:04.686836+00:00",
+      "attempts": 1,
+      "claimed_at": "2026-10-26T22:25:21.576147+00:00",
+      "posted_at": "2026-10-26T22:25:24.943480+00:00",
+      "linkedin_post_id": "urn:li:share:7520611568036921344"
     }
   ],
   "events": [
@@ -7275,6 +7360,14 @@
       "at": "2026-10-26T22:25:21.576203+00:00",
       "level": "info",
       "message": "Claimed a scheduled post.",
+      "details": {
+        "queue_id": "4fc809d1-4a9a-4518-985b-c0ec22a96a6f"
+      }
+    },
+    {
+      "at": "2026-10-26T22:25:24.943580+00:00",
+      "level": "info",
+      "message": "Post published.",
       "details": {
         "queue_id": "4fc809d1-4a9a-4518-985b-c0ec22a96a6f"
       }
