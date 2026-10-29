@@ -1,6 +1,6 @@
 {
   "schema_version": 7,
-  "revision": 139,
+  "revision": 140,
   "settings": {
     "automation_enabled": true,
     "dry_run": false,
@@ -4441,9 +4441,10 @@
       "collection": "latin_sayings",
       "post_text": "Fugit irreparabile tempus.\n\nIrrecoverable time is fleeing.\n\n— Virgil, Georgics 3.284\n\n(Automated post; reviewed before scheduling.)",
       "scheduled_for": "2026-10-29T19:59:00+00:00",
-      "status": "queued",
+      "status": "publishing",
       "created_at": "2026-10-25T22:06:04.686836+00:00",
-      "attempts": 0
+      "attempts": 1,
+      "claimed_at": "2026-10-29T19:59:32.756915+00:00"
     },
     {
       "id": "358647e5-b9be-466f-9361-7c821f4c52bb",
@@ -7370,6 +7371,14 @@
       "message": "Post published.",
       "details": {
         "queue_id": "4fc809d1-4a9a-4518-985b-c0ec22a96a6f"
+      }
+    },
+    {
+      "at": "2026-10-29T19:59:32.756997+00:00",
+      "level": "info",
+      "message": "Claimed a scheduled post.",
+      "details": {
+        "queue_id": "0009f6a3-4911-418e-bf50-31cdd0301f70"
       }
     }
   ],
