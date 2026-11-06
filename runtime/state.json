@@ -1,6 +1,6 @@
 {
   "schema_version": 7,
-  "revision": 148,
+  "revision": 149,
   "settings": {
     "automation_enabled": true,
     "dry_run": false,
@@ -4613,10 +4613,12 @@
       "collection": "history_facts",
       "post_text": "History note: The Rosetta Stone carries one decree in three writing systems.\n\nIts Greek, Demotic, and hieroglyphic texts became central to deciphering Egyptian hieroglyphs.\n\nSource: The British Museum, The Rosetta Stone\n\n(Automated post; reviewed before scheduling.)",
       "scheduled_for": "2026-11-06T21:12:00+00:00",
-      "status": "publishing",
+      "status": "posted",
       "created_at": "2026-10-25T22:06:04.686836+00:00",
       "attempts": 1,
-      "claimed_at": "2026-11-06T21:12:43.063430+00:00"
+      "claimed_at": "2026-11-06T21:12:43.063430+00:00",
+      "posted_at": "2026-11-06T21:12:46.267639+00:00",
+      "linkedin_post_id": "urn:li:share:7524579553126539264"
     },
     {
       "id": "285833ca-4a75-45c6-8dee-1fd40d5de12b",
@@ -4816,6 +4818,46 @@
       "scheduled_for": "2026-11-17T22:02:00+00:00",
       "status": "queued",
       "created_at": "2026-11-04T21:18:46.797883+00:00",
+      "attempts": 0
+    },
+    {
+      "id": "c650453c-7664-4389-8b00-a37ffc75476f",
+      "saying_id": "seneca-ep-71-3",
+      "saying_snapshot": {
+        "id": "seneca-ep-71-3",
+        "approved": true,
+        "collection": "latin_sayings",
+        "lead": "",
+        "body": "",
+        "latin": "Ignoranti quem portum petat nullus suus ventus est.",
+        "translation": "No wind is favorable to one who does not know which harbour to seek.",
+        "attribution": "Seneca, Epistulae Morales 71.3",
+        "source_title": "Seneca, Epistulae Morales 71.3",
+        "source_url": "",
+        "source_type": "primary text",
+        "tags": "",
+        "verified_at": "",
+        "latin_kind": "original Latin",
+        "primary_theme": "",
+        "source_language": "Latin",
+        "source_period": "antiquity",
+        "source_confidence": "curated; verify edition",
+        "source_text": "",
+        "origin": "bundled curated library",
+        "verification_status": "review source before approval",
+        "note": "",
+        "ai_review": {},
+        "review_status": "unreviewed",
+        "reviewed_at": "",
+        "review_model": "",
+        "duplicate_warning": "",
+        "policy_warning": ""
+      },
+      "collection": "latin_sayings",
+      "post_text": "Ignoranti quem portum petat nullus suus ventus est.\n\nNo wind is favorable to one who does not know which harbour to seek.\n\n— Seneca, Epistulae Morales 71.3\n\n(Automated post; reviewed before scheduling.)",
+      "scheduled_for": "2026-11-20T22:26:00+00:00",
+      "status": "queued",
+      "created_at": "2026-11-06T21:12:46.267757+00:00",
       "attempts": 0
     }
   ],
@@ -6744,6 +6786,49 @@
       "claimed_at": "2026-11-05T22:24:15.636520+00:00",
       "posted_at": "2026-11-05T22:24:19.240435+00:00",
       "linkedin_post_id": "urn:li:share:7524235170841997312"
+    },
+    {
+      "id": "ec5d4549-6fc2-4302-b007-cc744178f916",
+      "saying_id": "history-rosetta-stone",
+      "saying_snapshot": {
+        "id": "history-rosetta-stone",
+        "approved": true,
+        "collection": "history_facts",
+        "lead": "The Rosetta Stone carries one decree in three writing systems.",
+        "body": "Its Greek, Demotic, and hieroglyphic texts became central to deciphering Egyptian hieroglyphs.",
+        "latin": "",
+        "translation": "",
+        "attribution": "The British Museum, The Rosetta Stone",
+        "source_title": "The Rosetta Stone",
+        "source_url": "https://www.britishmuseum.org/collection/object/Y_EA24",
+        "source_type": "authoritative reference",
+        "tags": "writing and language",
+        "verified_at": "",
+        "latin_kind": "",
+        "primary_theme": "writing and language",
+        "source_language": "English",
+        "source_period": "196 BCE",
+        "source_confidence": "starter record; verify source",
+        "source_text": "",
+        "origin": "bundled starter library",
+        "verification_status": "review source before approval",
+        "note": "Verify the wording and linked source before approval.",
+        "ai_review": {},
+        "review_status": "unreviewed",
+        "reviewed_at": "",
+        "review_model": "",
+        "duplicate_warning": "",
+        "policy_warning": ""
+      },
+      "collection": "history_facts",
+      "post_text": "History note: The Rosetta Stone carries one decree in three writing systems.\n\nIts Greek, Demotic, and hieroglyphic texts became central to deciphering Egyptian hieroglyphs.\n\nSource: The British Museum, The Rosetta Stone\n\n(Automated post; reviewed before scheduling.)",
+      "scheduled_for": "2026-11-06T21:12:00+00:00",
+      "status": "posted",
+      "created_at": "2026-10-25T22:06:04.686836+00:00",
+      "attempts": 1,
+      "claimed_at": "2026-11-06T21:12:43.063430+00:00",
+      "posted_at": "2026-11-06T21:12:46.267639+00:00",
+      "linkedin_post_id": "urn:li:share:7524579553126539264"
     }
   ],
   "events": [
@@ -7785,6 +7870,14 @@
       "at": "2026-11-06T21:12:43.063513+00:00",
       "level": "info",
       "message": "Claimed a scheduled post.",
+      "details": {
+        "queue_id": "ec5d4549-6fc2-4302-b007-cc744178f916"
+      }
+    },
+    {
+      "at": "2026-11-06T21:12:46.267724+00:00",
+      "level": "info",
+      "message": "Post published.",
       "details": {
         "queue_id": "ec5d4549-6fc2-4302-b007-cc744178f916"
       }
