@@ -1,6 +1,6 @@
 {
   "schema_version": 7,
-  "revision": 151,
+  "revision": 152,
   "settings": {
     "automation_enabled": true,
     "dry_run": false,
@@ -4699,9 +4699,10 @@
       "collection": "latin_sayings",
       "post_text": "Quot homines, tot sententiae.\n\nSo many people, so many opinions.\n\n— Terence, Phormio 454\n\n(Automated post; reviewed before scheduling.)",
       "scheduled_for": "2026-11-10T21:34:00+00:00",
-      "status": "queued",
+      "status": "publishing",
       "created_at": "2026-10-29T19:59:35.599911+00:00",
-      "attempts": 0
+      "attempts": 1,
+      "claimed_at": "2026-11-10T21:34:02.083650+00:00"
     },
     {
       "id": "24fca6a8-2125-4510-804b-25d7db2a073a",
@@ -7982,6 +7983,14 @@
       "message": "Post published.",
       "details": {
         "queue_id": "285833ca-4a75-45c6-8dee-1fd40d5de12b"
+      }
+    },
+    {
+      "at": "2026-11-10T21:34:02.083712+00:00",
+      "level": "info",
+      "message": "Claimed a scheduled post.",
+      "details": {
+        "queue_id": "e36407d4-24c2-4426-8357-f1a8148f6cf6"
       }
     }
   ],
