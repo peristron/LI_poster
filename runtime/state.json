@@ -1,6 +1,6 @@
 {
   "schema_version": 7,
-  "revision": 165,
+  "revision": 166,
   "settings": {
     "automation_enabled": true,
     "dry_run": false,
@@ -5000,9 +5000,10 @@
       "collection": "history_facts",
       "post_text": "History note: When North American railroads adopted standard time in 1883, some communities briefly experienced two versions of noon.\n\nOne was local solar noon; the other was noon under the new railway time zone.\n\nSource: Smithsonian National Museum of American History, Synchronizing Time\n\n(Automated post; reviewed before scheduling.)",
       "scheduled_for": "2026-11-23T21:52:00+00:00",
-      "status": "queued",
+      "status": "publishing",
       "created_at": "2026-11-09T21:40:47.036274+00:00",
-      "attempts": 0
+      "attempts": 1,
+      "claimed_at": "2026-11-23T21:52:36.595677+00:00"
     },
     {
       "id": "6e796d10-ff8c-412e-a470-0de16a80e2b3",
@@ -8696,6 +8697,14 @@
       "message": "Post published.",
       "details": {
         "queue_id": "c650453c-7664-4389-8b00-a37ffc75476f"
+      }
+    },
+    {
+      "at": "2026-11-23T21:52:36.595729+00:00",
+      "level": "info",
+      "message": "Claimed a scheduled post.",
+      "details": {
+        "queue_id": "e139c4bd-e12a-4281-a9d2-bf20d946b79a"
       }
     }
   ],
